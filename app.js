@@ -117,7 +117,7 @@
           <h3>งานในมือ</h3>
           ${work.length ? work.map((p) => `
             <div class="item"><div><div class="t">${esc(p.title)}</div><div class="n">${esc(p.note)} · ${esc(p.updated)}</div></div>${pill(p.stage, stageLabel(p.stage))}</div>`).join("")
-            : `<div class="empty">ยังไม่มีงาน — ส่งไอเดียผ่านเบลได้เลย</div>`}
+            : `<div class="empty">ยังไม่มีงาน — ส่งไอเดียผ่าน Bell ได้เลย</div>`}
         </div>
       </div>`;
 

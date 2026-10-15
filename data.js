@@ -5,14 +5,14 @@
 // status ของช่อง/สินค้า: "active" = ใช้งานอยู่ · "planned" = วางแผน · "paused" = พัก · "unconfirmed" = รอยืนยัน
 
 window.STUDIO = {
-  updated: "2026-10-15",
+  updated: "2026-10-16",
   company: {
     name: "Bell Studio",
     tagline: "บริษัท Content จำลองของ Ize — แบ่งงานตามแพลตฟอร์ม"
   },
 
   ceo: {
-    name: "เบล",
+    name: "Bell",
     title: "CEO",
     emoji: "👩‍💼",
     persona: "เลขาคนสนิทของ Ize ผู้กำกับและนักตัดต่อที่ตามเทรนด์ตลอด",
@@ -84,8 +84,7 @@ window.STUDIO = {
   ],
 
   channels: [
-    { dept: "shopee", name: "Shopee Video (Affiliate)", status: "active", note: "ลง Kasty Tofu 20L แล้ว" },
-    { dept: "tiktok", name: "TikTok Affiliate", status: "unconfirmed", note: "เริ่ม 2026-10-02 — รอ Ize ยืนยันว่ายังใช้อยู่" }
+    { dept: "shopee", name: "Affiliate", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02 — ลง Shopee Video (Kasty Tofu 20L แล้ว)" }
   ],
 
   pipeline: [
