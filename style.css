@@ -58,7 +58,6 @@
     --d-facebook: #0a84ff; --d-youtube: #ff453a; --d-tiktok: #2ad1db; --d-shopee: #ff7a1a;
     color-scheme: dark;
   }
-  .brand img { filter: invert(1); }
 }
 
 * { box-sizing: border-box; }
@@ -91,7 +90,10 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
   border: 1px solid color-mix(in srgb, var(--hairline) 70%, transparent); border-radius: 20px; box-shadow: var(--shadow-bar);
 }
 .brand { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; margin-right: auto; }
-.brand img { width: 26px; height: 26px; border-radius: 7px; }
+/* logo: alpha masks painted with the ink colour, so it is black on light and white on dark */
+.logo-mark, .logo-full { display: block; background-color: var(--ink); -webkit-mask: url(logo-mark.png) center / contain no-repeat; mask: url(logo-mark.png) center / contain no-repeat; }
+.logo-mark { width: 24px; height: 35px; }
+.logo-full { width: 108px; height: 170px; margin: 0 auto 28px; -webkit-mask-image: url(logo-full.png); mask-image: url(logo-full.png); }
 .nav-links { display: flex; align-items: center; gap: 2px; }
 .nav-link {
   display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border: 0; border-radius: 999px; background: none;
@@ -312,6 +314,7 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
   .icon-btn.menu-toggle { display: grid; }
   .band { padding: 64px 16px; }
   .hero { padding-top: 56px; }
+  .logo-full { width: 96px; height: 150px; margin-bottom: 22px; }
   .lede { font-size: 19px; }
   .stats { gap: 12px; margin-top: 44px; }
   .stat-label { font-size: 14px; }
@@ -321,7 +324,7 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
   .product-stage { aspect-ratio: 1 / 1; border-radius: 24px; }
 }
 @media (max-width: 560px) {
-  .brand span { display: none; }
+  .brand span:not(.logo-mark) { display: none; }
   .gallery { grid-template-columns: 1fr; }
   .row-meta { display: none; }
   .ribbon .ribbon-actions { display: flex; justify-content: center; margin: 8px 0 0; }

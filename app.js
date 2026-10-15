@@ -111,7 +111,7 @@
 
     nav.innerHTML = `
       <nav class="pillbar" aria-label="Main">
-        <a class="brand" href="#/next"><img src="icon.svg" alt=""><span>${esc(S().company.name)}</span></a>
+        <a class="brand" href="#/next"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
         <div class="nav-links" id="nav-links">
           <a class="nav-link" href="#/next"${cur(r.view === "next")}>${t("upNext")}</a>
           <a class="nav-link" href="#/board"${cur(r.view === "board")}>${t("board")}</a>
@@ -146,10 +146,11 @@
       <button type="button" data-export>${t("export")}</button><button type="button" data-reset>${t("reset")}</button></span></div>`;
   }
 
-  function hero({ context = "", title, lede = "", actions = "", stats = null, after = "" }) {
+  function hero({ logo = false, context = "", title, lede = "", actions = "", stats = null, after = "" }) {
     return `
       <section class="band hero">
         <div class="inner">
+          ${logo ? `<span class="logo-full" role="img" aria-label="${esc(S().company.name)}"></span>` : ""}
           ${context ? `<div class="context">${context}</div>` : ""}
           <h1>${esc(title)}</h1>
           ${lede ? `<p class="lede">${lede}</p>` : ""}
@@ -198,7 +199,7 @@
       </button>`);
 
     return hero({
-      context: t("nextContext"),
+      logo: true,
       title: t("upNext"),
       lede: t("nextLede", { doing: n(doing.length, "clip"), ideas: n(ideas.length, "idea"), channels: n(S().channels.length, "channel") }),
       actions: hasCh ? btn(t("newIdea"), 'data-new-work=""') : btn(t("newChannel"), 'data-new-channel=""'),
