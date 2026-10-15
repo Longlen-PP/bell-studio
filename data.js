@@ -86,14 +86,15 @@ window.STUDIO = {
   // ---- ลำดับชั้นงาน: แผนก → ช่อง → (สินค้า เฉพาะช่องขายของ) → งาน/คลิป ----
   // โฟลเดอร์บน Drive ใช้ลำดับเดียวกัน: Bell Studio/<dept>/<ชื่อช่อง>/<ชื่อสินค้าหรืองาน>/
 
-  // ช่อง/บัญชี — id ห้ามซ้ำ, dept = id ของแผนก
+  // ช่อง/บัญชี — id ห้ามซ้ำ, dept = id ของแผนก, kind = "shop" (ช่องขายของ มีสินค้า) หรือ "content"
   channels: [
-    { id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02" }
+    { id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", kind: "shop", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02" }
   ],
 
   // สินค้า (ใช้กับช่องขายของ) — id ห้ามซ้ำ, channel = id ของช่อง
+  // image = ลิงก์แชร์รูปจาก Google Drive หรือ URL รูป (https) — เว้นว่างได้
   products: [
-    { id: "kasty-tofu-20l", channel: "affiliate", name: "Kasty Tofu Cat Litter 20L Original", status: "active", updated: "2026-10-15" }
+    { id: "kasty-tofu-20l", channel: "affiliate", name: "Kasty Tofu Cat Litter 20L Original", status: "active", image: "", note: "", updated: "2026-10-15" }
   ],
 
   // งาน/คลิป — channel = id ของช่อง, product = id ของสินค้า (ใส่เฉพาะงานขายของ)
