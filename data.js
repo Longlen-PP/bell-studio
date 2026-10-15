@@ -2,6 +2,7 @@
 // ⚠️ เว็บนี้เป็นสาธารณะ: ห้ามใส่รายได้ ยอดคอมมิชชั่น ลิงก์ affiliate ส่วนตัว หรือข้อมูลบัญชี
 //
 // stage ของ pipeline: "idea" = ไอเดีย · "doing" = กำลังทำ · "done" = ลงแล้ว
+// platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
 // status ของช่อง/สินค้า: "active" = ใช้งานอยู่ · "planned" = วางแผน · "paused" = พัก · "unconfirmed" = รอยืนยัน
 
 window.STUDIO = {
@@ -36,6 +37,7 @@ window.STUDIO = {
         { title: "ผู้กำกับ prompt", duty: "Character/Location Sheet และ prompt ภาพกับวิดีโอ" },
         { title: "คนตัดต่อ & ดูแลเพจ", duty: "ตัดต่อ แคปชัน และตารางโพสต์" }
       ],
+      platforms: ["Facebook", "Facebook Reels"],
       skills: ["short-drama-blueprint", "fruit-drama-series", "comedy-short-script", "thai-costume-parody-series"],
       rules: ["ติดป้ายเนื้อหา AI ตามกฎ Meta", "ห้ามใช้ชื่อหรือหน้าคนดังจริง"]
     },
@@ -50,6 +52,7 @@ window.STUDIO = {
         { title: "ฝ่ายภาพ", duty: "Style Bible, Shot List และ prompt ภาพ" },
         { title: "SEO & ตั้งช่อง", duty: "ชื่อช่อง คำอธิบาย แท็ก และปก" }
       ],
+      platforms: ["YouTube", "YouTube Shorts"],
       skills: ["stick-figure-storytelling", "history-documentary-blueprint", "kids-channel-setup-prompts", "kids-mv-song-prompt", "kids-3d-cartoon-prompt"],
       rules: ["คอนเทนต์เด็กต้องตั้ง Made for Kids และใช้กฎปลอดภัยเด็ก", "ติดป้าย altered/synthetic content"]
     },
@@ -64,6 +67,7 @@ window.STUDIO = {
         { title: "ผู้กำกับภาพ", duty: "prompt ภาพแบบ cinematic และลุคแฟชั่น" },
         { title: "คนโพสต์ & ดูเทรนด์", duty: "เสียงเพลงที่กำลังมา แฮชแท็ก และเวลาโพสต์" }
       ],
+      platforms: ["TikTok"],
       skills: ["ai-influencer-identity", "cinematic-prompt", "asmr-craft-storyboard", "skeleton-seller-ads"],
       rules: ["แฟชั่น/ลุคสวยเท่านั้น ห้ามเนื้อหาวาบหวิว", "คน AI ทุกตัวต้องติดป้าย AI-generated", "คลิปขายของเป็นของแผนก Shopee (TikTok ช่วยโพสต์)"]
     },
@@ -78,6 +82,7 @@ window.STUDIO = {
         { title: "คนเขียนสคริปต์ขาย", duty: "Hook, Content และ CTA ปักตะกร้า" },
         { title: "ฝ่ายภาพสินค้า", duty: "prompt ภาพมือถือสินค้าและคลิป UGC" }
       ],
+      platforms: ["Shopee Video", "Shopee Live"],
       skills: ["affiliate-script-master", "affiliate-image-prompt", "thai-social-commerce-script", "ugc-ad-producer", "ugc-review-image-prompt", "video-ad-prompt-blueprint", "object-swap-video-lock"],
       rules: ["ติดตะกร้าก่อนโพสต์", "เปิดป้าย AI", "ห้ามรีวิวปลอมหรือเคลมเกินฉลาก", "ราคาต้องเช็คซ้ำวันโพสต์"]
     }

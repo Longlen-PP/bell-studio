@@ -27,6 +27,10 @@ window.BellStore = (function () {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         state = JSON.parse(raw);
+        const fresh = seed();
+        state.departments.forEach((d) => {
+          if (!d.platforms) d.platforms = fresh.departments.find((x) => x.id === d.id)?.platforms || [];
+        });
         localChanges = true;
         return;
       }

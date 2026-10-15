@@ -247,7 +247,7 @@
       return `
         <a class="row" href="#/channel/${esc(c.id)}">
           <span class="row-main"><span class="row-title">${esc(c.name)}</span><span class="row-sub">${esc(bits)}</span></span>
-          <span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>${icon("chev", "icon chev")}
+          ${c.status && c.status !== "active" ? `<span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : ""}${icon("chev", "icon chev")}
         </a>`;
     });
     return hero({
@@ -277,7 +277,7 @@
   function viewChannel(id) {
     const c = channel(id), d = dept(c.dept);
     const platformBit = c.platform && c.platform !== d.name ? `${esc(c.platform)}<span class="sep">·</span>` : "";
-    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}<span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>`;
+    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}`.replace(/<span class="sep">·<\/span>$/, "") + (c.status && c.status !== "active" ? `<span class="sep">·</span><span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : "");
     const editBtn = btn(t("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit");
 
     if (c.kind === "shop") {
@@ -513,20 +513,25 @@
   function editChannel(id, deptId) {
     const isNew = id == null;
     const dId = deptId || S().departments[0].id;
-    const c = isNew ? { name: "", dept: dId, platform: "", kind: dId === "shopee" ? "shop" : "content", status: "planned", note: "" } : channel(id);
+    const platformsFor = (deptKey, current) => {
+      const d = dept(deptKey);
+      const list = (d?.platforms?.length ? d.platforms : [d?.name]).filter(Boolean);
+      if (current && !list.includes(current)) list.push(current);
+      return list.map((p) => ({ id: p, label: p }));
+    };
+    const c = isNew ? { name: "", dept: dId, platform: "", kind: dId === "shopee" ? "shop" : "content", status: "active", note: "" } : channel(id);
     // Opened from a department: the department is already known, so it goes in the title instead of a field.
     const fixedDept = isNew && deptId ? dept(deptId) : null;
-    // Everything beyond name + department has a sensible default, so it stays folded away.
+    // A new channel is simply active, so there is no status to pick. Everything with a good default stays folded away.
     const more =
-      fieldWrap(t("f_platform"), input("platform", c.platform, `autocomplete="off" placeholder="${t("f_platformPh")}"`)) +
       `<div class="field"><label class="check"><input type="checkbox" name="shop"${c.kind === "shop" ? " checked" : ""}>${t("f_shop")}</label><span class="hint">${t("f_shopHint")}</span></div>` +
-      fieldWrap(t("f_status"), select("status", statusOptions(), c.status)) +
       fieldWrap(t("f_note"), textarea("note", c.note || ""));
     const body =
       fieldWrap(t("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${t("f_channelPh")}"`)) +
       (fixedDept
         ? `<input type="hidden" name="dept" value="${esc(fixedDept.id)}">`
         : fieldWrap(t("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept))) +
+      fieldWrap(t("f_platform"), select("platform", platformsFor(c.dept, c.platform), c.platform || platformsFor(c.dept)[0]?.id)) +
       `<details class="more"${isNew ? "" : " open"}><summary>${t("f_moreDetails")}</summary><div class="more-body">${more}</div></details>`;
     const nProducts = isNew ? 0 : S().products.filter((p) => p.channel === id).length;
     const nWorks = isNew ? 0 : S().pipeline.filter((w) => w.channel === id).length;
@@ -539,9 +544,9 @@
           id: isNew ? slug(form.elements.name.value) : id,
           dept: form.elements.dept.value,
           name: form.elements.name.value.trim(),
-          platform: form.elements.platform.value.trim(),
+          platform: form.elements.platform.value,
           kind: form.elements.shop.checked ? "shop" : "content",
-          status: form.elements.status.value,
+          status: isNew ? "active" : (channel(id)?.status || "active"),
           note: form.elements.note.value.trim()
         };
         commit((s) => { if (isNew) s.channels.push(data); else Object.assign(s.channels.find((x) => x.id === id), data); }, isNew ? "toastChannelAdded" : "toastChannelSaved");
@@ -558,8 +563,11 @@
       deleteLabel: cascade ? t("deleteWith", { what: cascade }) : ""
     });
     const form = $("insp-form");
-    if (isNew && form.elements.dept.tagName === "SELECT") {
-      form.elements.dept.addEventListener("change", () => { form.elements.shop.checked = form.elements.dept.value === "shopee"; });
+    if (form.elements.dept.tagName === "SELECT") {
+      form.elements.dept.addEventListener("change", () => {
+        if (isNew) form.elements.shop.checked = form.elements.dept.value === "shopee";
+        form.elements.platform.innerHTML = platformsFor(form.elements.dept.value).map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("");
+      });
     }
   }
 
@@ -569,6 +577,7 @@
       fieldWrap(t("f_head"), input("head", d.head.name, 'required autocomplete="off"')) +
       fieldWrap(t("f_persona"), input("persona", d.head.persona, 'autocomplete="off"')) +
       fieldWrap(t("f_mission"), textarea("mission", d.mission)) +
+      fieldWrap(t("f_platforms"), textarea("platforms", (d.platforms || []).join("\n"), 'style="min-height:72px"'), t("f_platformsHint")) +
       fieldWrap(t("f_team"), textarea("roles", d.roles.map((r) => `${r.title} — ${r.duty}`).join("\n")), t("f_teamHint")) +
       fieldWrap(t("f_rules"), textarea("rules", d.rules.join("\n")), t("f_rulesHint")) +
       fieldWrap(t("f_skills"), textarea("skills", d.skills.join("\n"), 'style="min-height:80px"'), t("f_skillsHint"));
@@ -582,6 +591,7 @@
           tgt.mission = form.elements.mission.value.trim();
           tgt.roles = lines("roles").map((l) => { const [title, ...rest] = l.split(/\s+[—-]\s+/); return { title: title.trim(), duty: rest.join(" — ").trim() }; });
           tgt.rules = lines("rules");
+          tgt.platforms = lines("platforms");
           tgt.skills = lines("skills");
         }, "toastDeptSaved");
       }
