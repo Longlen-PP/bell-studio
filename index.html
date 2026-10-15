@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bell Studio</title>
+  <meta name="description" content="Dashboard บริษัท Content จำลอง — แผนก หน้าที่ งานในมือ และ pipeline ไอเดีย">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🎬</span>
+        <div>
+          <h1 id="company-name">Bell Studio</h1>
+          <p class="tagline" id="tagline"></p>
+        </div>
+      </div>
+      <p class="updated" id="updated"></p>
+    </div>
+    <nav class="wrap tabs" aria-label="หน้า">
+      <a href="#overview" data-tab="overview">ภาพรวม</a>
+      <a href="#dept" data-tab="dept">แผนก</a>
+      <a href="#pipeline" data-tab="pipeline">Pipeline</a>
+      <a href="#products" data-tab="products">สินค้า</a>
+    </nav>
+  </header>
+
+  <main class="wrap" id="view" aria-live="polite"></main>
+
+  <footer class="wrap foot">Bell Studio · ข้อมูลจาก <code>data.js</code> · อัปเดตโดยเบล</footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
