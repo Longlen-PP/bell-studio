@@ -83,15 +83,21 @@ window.STUDIO = {
     }
   ],
 
+  // ---- ลำดับชั้นงาน: แผนก → ช่อง → (สินค้า เฉพาะช่องขายของ) → งาน/คลิป ----
+  // โฟลเดอร์บน Drive ใช้ลำดับเดียวกัน: Bell Studio/<dept>/<ชื่อช่อง>/<ชื่อสินค้าหรืองาน>/
+
+  // ช่อง/บัญชี — id ห้ามซ้ำ, dept = id ของแผนก
   channels: [
-    { dept: "shopee", name: "Affiliate", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02 — ลง Shopee Video (Kasty Tofu 20L แล้ว)" }
+    { id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02" }
   ],
 
-  pipeline: [
-    { dept: "shopee", title: "Kasty Tofu 20L — คลิปขาย 30 วิ", stage: "done", updated: "2026-10-15", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video" }
-  ],
-
+  // สินค้า (ใช้กับช่องขายของ) — id ห้ามซ้ำ, channel = id ของช่อง
   products: [
-    { dept: "shopee", name: "Kasty Tofu Cat Litter 20L Original", platform: "Shopee Video", status: "active", updated: "2026-10-15" }
+    { id: "kasty-tofu-20l", channel: "affiliate", name: "Kasty Tofu Cat Litter 20L Original", status: "active", updated: "2026-10-15" }
+  ],
+
+  // งาน/คลิป — channel = id ของช่อง, product = id ของสินค้า (ใส่เฉพาะงานขายของ)
+  pipeline: [
+    { channel: "affiliate", product: "kasty-tofu-20l", title: "คลิปขาย 30 วิ", stage: "done", updated: "2026-10-15", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video" }
   ]
 };
