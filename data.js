@@ -29,7 +29,7 @@ window.STUDIO = {
       id: "facebook",
       name: "Facebook",
       emoji: "📘",
-      head: { name: "มีน", gender: "ญ", emoji: "🎭", persona: "นักเล่าเรื่องสายดราม่า อินกับตัวละคร เข้าใจคนดูเพจไทย" },
+      head: { name: "Luna", gender: "ญ", emoji: "🎭", persona: "นักเล่าเรื่องสายดราม่า อินกับตัวละคร เข้าใจคนดูเพจไทย" },
       mission: "ละครแนวตั้ง ซีรีส์ดราม่า สเก็ตช์ตลก",
       roles: [
         { title: "คนเขียนบท", duty: "พล็อต บทพูด cliffhanger ปิดแต่ละตอน" },
@@ -43,7 +43,7 @@ window.STUDIO = {
       id: "youtube",
       name: "YouTube",
       emoji: "▶️",
-      head: { name: "ต้นกล้า", gender: "ช", emoji: "📚", persona: "นักเล่าเรื่องใจเย็น ละเอียด ชอบประวัติศาสตร์และงานเด็ก" },
+      head: { name: "Shadow", gender: "ช", emoji: "📚", persona: "นักเล่าเรื่องใจเย็น ละเอียด ชอบประวัติศาสตร์และงานเด็ก" },
       mission: "เล่าเรื่อง สารคดี เพลงเด็ก",
       roles: [
         { title: "คนเขียนสคริปต์ & พากย์", duty: "สคริปต์ยาว และจังหวะเสียงพากย์" },
@@ -57,7 +57,7 @@ window.STUDIO = {
       id: "tiktok",
       name: "TikTok",
       emoji: "🎵",
-      head: { name: "ใบเตย", gender: "ญ", emoji: "💃", persona: "สายแฟชั่น ไวกับเทรนด์ รู้ว่าคลิปไหนหยุดนิ้วคนดู" },
+      head: { name: "Queen", gender: "ญ", emoji: "💃", persona: "สายแฟชั่น ไวกับเทรนด์ รู้ว่าคลิปไหนหยุดนิ้วคนดู" },
       mission: "AI Influencer แฟชั่น/ลุคสวย และคลิปไม่ออกกล้อง",
       roles: [
         { title: "ฝ่ายสร้างตัวตน AI", duty: "ออกแบบ AI Influencer ที่ใช้ซ้ำได้" },
@@ -71,7 +71,7 @@ window.STUDIO = {
       id: "shopee",
       name: "Shopee",
       emoji: "🛒",
-      head: { name: "ปั้น", gender: "ช", emoji: "📦", persona: "นักขายสายตัวเลข คัดสินค้าเก่ง ไม่เคลมเกินจริง" },
+      head: { name: "Axe", gender: "ช", emoji: "📦", persona: "นักขายสายตัวเลข คัดสินค้าเก่ง ไม่เคลมเกินจริง" },
       mission: "ปักตะกร้า Affiliate และ Shopee Video (เป็นเจ้าของคลิปขายของทุกแพลตฟอร์ม)",
       roles: [
         { title: "ฝ่ายคัดสินค้า", duty: "เลือกสินค้า เช็คราคาและค่าคอมก่อนทำ" },
