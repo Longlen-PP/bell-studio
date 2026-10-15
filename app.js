@@ -99,8 +99,8 @@
       <div class="menu-group" style="--c: var(--d-${esc(d.id)})">
         <a class="menu-link" href="#/dept/${esc(d.id)}"><span class="dot"></span>${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
         ${S().channels.filter((c) => c.dept === d.id).map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}
-        <button class="menu-link add" type="button" data-new-channel="${esc(d.id)}">${t("newChannel")}</button>
-      </div>`).join("");
+      </div>`).join("") + `
+      <div class="menu-group"><button class="menu-link add" type="button" data-new-channel="">${icon("plus")}${t("newChannel")}</button></div>`;
     const hasCh = S().channels.length > 0;
     const newMenu = `
       <div class="menu-group">
@@ -276,7 +276,8 @@
 
   function viewChannel(id) {
     const c = channel(id), d = dept(c.dept);
-    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${esc(c.platform)}<span class="sep">·</span><span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>`;
+    const platformBit = c.platform && c.platform !== d.name ? `${esc(c.platform)}<span class="sep">·</span>` : "";
+    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}<span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>`;
     const editBtn = btn(t("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit");
 
     if (c.kind === "shop") {
@@ -330,7 +331,7 @@
       ? `<div class="product-stage">${img}</div>`
       : `<button class="product-stage" type="button" data-edit-product="${esc(id)}"><span class="no-photo">${icon("photo")}${t("addPhoto")}</span></button>`;
     const facts = [
-      [t("factChannel"), `${esc(c.name)} · ${esc(c.platform)}`],
+      [t("factChannel"), [c.name, c.platform && c.platform !== d.name ? c.platform : ""].filter(Boolean).map(esc).join(" · ")],
       [t("factUpdated"), `<span class="num">${esc(fmtDate(p.updated))}</span>`],
       p.note ? [t("factNote"), esc(p.note)] : null
     ].filter(Boolean);
@@ -513,17 +514,25 @@
     const isNew = id == null;
     const dId = deptId || S().departments[0].id;
     const c = isNew ? { name: "", dept: dId, platform: "", kind: dId === "shopee" ? "shop" : "content", status: "planned", note: "" } : channel(id);
-    const body =
-      fieldWrap(t("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${t("f_channelPh")}"`)) +
-      fieldWrap(t("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept)) +
+    // Opened from a department: the department is already known, so it goes in the title instead of a field.
+    const fixedDept = isNew && deptId ? dept(deptId) : null;
+    // Everything beyond name + department has a sensible default, so it stays folded away.
+    const more =
       fieldWrap(t("f_platform"), input("platform", c.platform, `autocomplete="off" placeholder="${t("f_platformPh")}"`)) +
       `<div class="field"><label class="check"><input type="checkbox" name="shop"${c.kind === "shop" ? " checked" : ""}>${t("f_shop")}</label><span class="hint">${t("f_shopHint")}</span></div>` +
       fieldWrap(t("f_status"), select("status", statusOptions(), c.status)) +
       fieldWrap(t("f_note"), textarea("note", c.note || ""));
+    const body =
+      fieldWrap(t("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${t("f_channelPh")}"`)) +
+      (fixedDept
+        ? `<input type="hidden" name="dept" value="${esc(fixedDept.id)}">`
+        : fieldWrap(t("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept))) +
+      `<details class="more"${isNew ? "" : " open"}><summary>${t("f_moreDetails")}</summary><div class="more-body">${more}</div></details>`;
     const nProducts = isNew ? 0 : S().products.filter((p) => p.channel === id).length;
     const nWorks = isNew ? 0 : S().pipeline.filter((w) => w.channel === id).length;
     const cascade = [nProducts && n(nProducts, "product"), nWorks && n(nWorks, "clip")].filter(Boolean).join(" + ");
-    openInspector(window.BELL_I18N[lang][isNew ? "newChannel" : "editChannel"], body, {
+    const title = window.BELL_I18N[lang][isNew ? "newChannel" : "editChannel"] + (fixedDept ? ` · ${fixedDept.name}` : "");
+    openInspector(title, body, {
       onSave(form) {
         if (!required(form, "name", "errName")) return;
         const data = {
@@ -548,6 +557,10 @@
       },
       deleteLabel: cascade ? t("deleteWith", { what: cascade }) : ""
     });
+    const form = $("insp-form");
+    if (isNew && form.elements.dept.tagName === "SELECT") {
+      form.elements.dept.addEventListener("change", () => { form.elements.shop.checked = form.elements.dept.value === "shopee"; });
+    }
   }
 
   function editDept(id) {
