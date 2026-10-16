@@ -360,9 +360,19 @@
     try { filter = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
     const scoped = filter.startsWith("ch:") ? channel(filter.slice(3)) : filter.startsWith("wk:") ? work(filter.slice(3)) : null;
     if (filter !== "all" && !dept(filter) && !scoped) filter = "all";
-    const chips = [`<button class="chip" type="button" data-board-filter="all" aria-pressed="${filter === "all"}">${t("all")}</button>`]
-      .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}">${deptIcon(d.id)}${esc(d.name)}</button>`))
-      .concat(scoped ? [`<button class="chip" type="button" data-board-filter="${esc(filter)}" aria-pressed="true">${esc(scoped.name || scoped.title)}</button>`] : []).join("");
+    // the department bar: a sliding highlight picks the department, each tab shows how many clips are still open
+    const tabStats = (pred) => {
+      const eps = S().episodes.filter(pred);
+      return { open: eps.filter((e) => e.stage !== "published").length, doing: eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, quiet: eps.filter(isIdle).length };
+    };
+    const tab = (key, iconHtml, label, st, color) => `
+      <button class="dtab" type="button" data-board-filter="${esc(key)}" aria-pressed="${filter === key}" style="--c:${color}">
+        ${iconHtml}<span class="dtab-name">${esc(label)}</span>
+        <span class="dtab-meta">${st.doing ? `<i class="dtab-live" title="${esc(t("mapLive", { n: st.doing }))}"></i>` : ""}${st.quiet ? `<i class="dtab-quiet" title="${esc(t("railIdle", { n: st.quiet, d: IDLE_DAYS }))}"></i>` : ""}<b class="num">${st.open}</b></span>
+      </button>`;
+    const tabs = [tab("all", "", L("all"), tabStats(() => true), "var(--ink-2)")]
+      .concat(S().departments.map((d) => tab(d.id, deptIcon(d.id), d.name, tabStats((e) => deptOfWork(work(e.work)) === d.id), `var(--d-${esc(d.id)})`)))
+      .concat(scoped ? [tab(filter, "", scoped.name || scoped.title, tabStats((e) => filter.startsWith("ch:") ? work(e.work)?.channel === filter.slice(3) : e.work === filter.slice(3)), "var(--ink-2)")] : []).join("");
     const inScope = (e) => filter === "all" ? true
       : filter.startsWith("ch:") ? work(e.work)?.channel === filter.slice(3)
       : filter.startsWith("wk:") ? e.work === filter.slice(3)
@@ -396,21 +406,9 @@
           }).join("") + more : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
-    // the rail: one dot per clip on its stage, so a glance shows where work sits and what has gone quiet
-    const MAX_DOTS = 12;
     const idleN = items.filter(isIdle).length;
-    const railCols = STAGES.map((st) => {
-      const list = items.filter((e) => e.stage === st);
-      const dots = list.slice(0, MAX_DOTS).map((e, i) => {
-        const age = ageOf(e);
-        const tip = `${epCode(e)}${e.format ? " · " + e.format : ""} — ${age ? t("railAgo", { n: age }) : L("railToday")}`;
-        return `<button class="clip-dot st-${st}${isIdle(e) ? " idle" : ""}" type="button" data-edit-ep="${esc(e.id)}" title="${esc(tip)}" aria-label="${esc(tip)}" style="--i:${i}"></button>`;
-      }).join("") + (list.length > MAX_DOTS ? `<span class="rail-more">${t("railMore", { n: list.length - MAX_DOTS })}</span>` : "");
-      return `<div class="rail-col st-${st}"><div class="rail-dots">${dots}</div><div class="rail-bar"></div><div class="rail-label">${stLabel(st)}</div></div>`;
-    }).join("");
-    const rail = `<div class="rail" role="group" aria-label="${esc(L("board"))}">${railCols}</div>` +
-      (idleN ? `<p class="rail-note"><span class="clip-dot idle static"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "");
-    return hero({ hideTitle: true, title: L("board"), after: rail + `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
+    const quiet = idleN ? `<p class="rail-note"><span class="quiet-ring"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "";
+    return hero({ hideTitle: true, title: L("board"), after: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
@@ -611,6 +609,24 @@
       (T.rules && w.rules ? `<section class="band gray"><div class="inner"><div class="sec-head"><h2>${t("secRulesWork")}</h2></div><p class="copy pre">${esc(w.rules)}</p></div></section>` : "");
   }
 
+  // the highlight under the pressed department tab; it starts where it was before the render so it slides
+  let barPrev = null;
+  function placeDeptbar() {
+    const bar = main.querySelector(".deptbar");
+    if (!bar) { barPrev = null; return; }
+    const on = bar.querySelector('.dtab[aria-pressed="true"]'), ind = bar.querySelector(".deptbar-ind");
+    if (!on || !ind) return;
+    const to = { x: on.offsetLeft, w: on.offsetWidth, c: on.style.getPropertyValue("--c") };
+    const set = (p) => { ind.style.transform = `translateX(${p.x}px)`; ind.style.width = p.w + "px"; ind.style.setProperty("--c", p.c); };
+    if (barPrev && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      set(barPrev); ind.getBoundingClientRect(); ind.classList.add("slide");
+      setTimeout(() => set(to), 30);
+    } else set(to);
+    ind.classList.add("ready");
+    barPrev = to;
+    on.scrollIntoView({ inline: "center", block: "nearest" });
+  }
+
   function render() {
     const r = route();
     renderNav(r);
@@ -623,6 +639,7 @@
       img.replaceWith(Object.assign(document.createElement("span"), { className: "no-photo", textContent: L("photoUnavailable") }));
     }, { once: true }));
     foot.innerHTML = `${t("foot", { ceo: S().ceo.name, date: fmtDate(S().updated) })} · ${store.hasLocalChanges() ? t("footLocal") : t("footPublished")} · v${esc(window.STUDIO.version || "1.0")}`;
+    placeDeptbar();
     document.title = r.view === "next" ? "Bell Studio" : `${main.querySelector("h1")?.textContent} — Bell Studio`;
   }
 
