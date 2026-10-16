@@ -378,6 +378,14 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
 .dtab-meta b { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 12%, transparent); font-size: 12.5px; font-weight: 600; text-align: center; }
 .dtab-live { width: 8px; height: 8px; border-radius: 50%; background: var(--c); animation: flow-pulse 2.2s ease-out infinite; box-shadow: 0 0 0 0 var(--c); }
 .dtab-quiet, .quiet-ring { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--ink); }
+.map-node, .map-link { transition: opacity 400ms, filter 400ms; }
+.map-node.dim { opacity: .32; filter: saturate(.3); }
+.map-link.dim { opacity: .2; }
+.deptlink { margin-top: 8px; text-align: center; font-size: 15px; }
+.deptlink a { display: inline-flex; align-items: center; gap: 6px; color: var(--link); text-decoration: none; }
+.deptlink a:hover { text-decoration: underline; }
+.deptlink .chev { width: 12px; height: 12px; }
+.board > section { scroll-margin-top: 96px; }
 .rail-note { margin-top: 18px; font-size: 15px; color: var(--ink-2); text-align: center; }
 .quiet-ring { margin-right: 9px; vertical-align: -1px; }
 @media (max-width: 560px) { .dtab { padding: 9px 12px; gap: 7px; font-size: 14px; } .dtab-name { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }

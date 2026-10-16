@@ -11,7 +11,7 @@ window.BELL_I18N = {
 
     st_idea: "Idea", st_script: "Script", st_producing: "Producing", st_editing: "Editing", st_published: "Published",
     secNextUp: "Up next", dcPub: "{pub} published", dcSetup: "Set up the first channel", mapLive: "{n} in progress",
-    flowAria: "Where everything stands", flowOpen: "Open {stage} on the Board", flowPub: "<strong>{pub} of {total}</strong> published", flowNext: "Closest to done:",
+    flowAria: "Where everything stands", flowOpen: "Show the {stage} clips", flowPub: "<strong>{pub} of {total}</strong> published", flowNext: "Closest to done:",
     flowEmpty: "Nothing here yet. Start one with + New.", flowAllDone: "Everything here is published.",
     st_active: "Active", st_paused: "Paused",
 
@@ -80,7 +80,7 @@ window.BELL_I18N = {
     secProd: "Production and results", e_length: "Length (seconds)", e_engine: "Made with", e_cost: "Cost (฿)", e_costHint: "Credits or fees spent on this clip, in baht.", e_statsAt: "Results as of", e_resultsHint: "Fill in whatever you have. Empty stays empty.",
     s_views: "Views", s_likes: "Likes", s_comments: "Comments", s_shares: "Shares", s_saves: "Saves", s_orders: "Orders",
     railIdle: "{n} quiet for {d}+ days",
-    firstClip: "First clip",
+    openDept: "Open the {name} page", firstClip: "First clip",
     showMore: "Show {n} more", showLess: "Show less",
     f_code: "Code", f_codeHint: "2-5 letters or digits, used in every code under this channel. Changing it renames them all.", errCode: "Use 2-5 letters or digits that no other channel in this department uses.",
     c_name: "Name", c_role: "Role", c_look: "Look and outfit", c_personality: "Personality", c_voice: "Voice", c_image: "Reference image link",
@@ -117,7 +117,7 @@ window.BELL_I18N = {
 
     st_idea: "ไอเดีย", st_script: "เขียนบท", st_producing: "กำลังผลิต", st_editing: "ตัดต่อ", st_published: "ลงแล้ว",
     secNextUp: "ต้องทำต่อ", dcPub: "ลงแล้ว {pub}", dcSetup: "ตั้งช่องแรก", mapLive: "กำลังทำ {n}",
-    flowAria: "สถานะงานทั้งหมด", flowOpen: "ดูขั้น {stage} บน Board", flowPub: "<strong>ลงแล้ว {pub} จาก {total}</strong>", flowNext: "ใกล้เสร็จที่สุด:",
+    flowAria: "สถานะงานทั้งหมด", flowOpen: "ดูคลิปขั้น {stage}", flowPub: "<strong>ลงแล้ว {pub} จาก {total}</strong>", flowNext: "ใกล้เสร็จที่สุด:",
     flowEmpty: "ยังไม่มีอะไรที่นี่ เริ่มจากปุ่ม + New", flowAllDone: "ลงครบทุกตอนแล้ว",
     st_active: "ใช้งานอยู่", st_paused: "พัก",
 
@@ -186,7 +186,7 @@ window.BELL_I18N = {
     secProd: "ต้นทุนและผลลัพธ์", e_length: "ความยาว (วินาที)", e_engine: "ทำด้วยเครื่องมือ", e_cost: "ต้นทุน (บาท)", e_costHint: "เครดิตหรือค่าใช้จ่ายที่ใช้กับคลิปนี้ เป็นบาท", e_statsAt: "ผลลัพธ์ ณ วันที่", e_resultsHint: "กรอกเท่าที่มี ช่องว่างปล่อยว่างได้",
     s_views: "ยอดชม", s_likes: "ถูกใจ", s_comments: "คอมเมนต์", s_shares: "แชร์", s_saves: "บันทึก", s_orders: "ออเดอร์",
     railIdle: "{n} ชิ้นเงียบเกิน {d} วัน",
-    firstClip: "คลิปแรก",
+    openDept: "เปิดหน้า {name}", firstClip: "คลิปแรก",
     showMore: "ดูอีก {n} ใบ", showLess: "ย่อ",
     f_code: "รหัสช่อง", f_codeHint: "ตัวอักษรหรือตัวเลข 2-5 ตัว ใช้เป็นส่วนหนึ่งของรหัสทุกอันในช่องนี้ ถ้าแก้ รหัสทั้งหมดจะเปลี่ยนตาม", errCode: "ใช้ตัวอักษรหรือตัวเลข 2-5 ตัว และต้องไม่ซ้ำกับช่องอื่นในแผนกเดียวกัน",
     c_name: "ชื่อ", c_role: "บทบาท", c_look: "หน้าตาและการแต่งตัว", c_personality: "นิสัย", c_voice: "เสียง", c_image: "ลิงก์รูปอ้างอิง",

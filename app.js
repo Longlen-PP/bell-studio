@@ -135,7 +135,7 @@
   // ---------- routing ----------
   function route() {
     const [view, id] = location.hash.replace(/^#\/?/, "").split("/");
-    if (view === "board") return { view: "board" };
+    if (view === "board") return { view: "next" };
     if (view === "dept" && dept(id)) return { view: "dept", id };
     if (view === "channel" && channel(id)) return { view: "channel", id };
     if ((view === "work" || view === "product") && work(id)) return { view: "work", id };
@@ -183,7 +183,6 @@
       <nav class="pillbar" aria-label="Main">
         <a class="brand" href="#/next" aria-label="${esc(S().company.name)} · ${esc(L("upNext"))}"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
         <div class="nav-links" id="nav-links">
-          <a class="nav-link" href="#/board"${cur(r.view === "board")}>${t("board")}</a>
           <div style="position:relative">
             <button class="nav-link" type="button" data-pop="depts" aria-expanded="false" aria-controls="pop-depts"${inDept ? ' aria-current="page"' : ""}>${t("departments")}${icon("down")}</button>
             <div class="popover" id="pop-depts" hidden>${deptMenu}</div>
@@ -313,6 +312,8 @@
   // ---------- company map: Bell in the middle, one node per department ----------
   // dots leave Bell toward a department for each episode in progress and come back green for each one published
   function companyMap() {
+    let picked = "all";
+    try { picked = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
     const SLOTS = [[17, 22], [83, 22], [17, 78], [83, 78]];
     const nodes = S().departments.map((d, i) => {
       const [x, y] = SLOTS[i % SLOTS.length];
@@ -323,14 +324,14 @@
       const pubN = eps.filter((e) => e.stage === "published").length;
       const bar = STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("");
       const sx = x < 50 ? -1 : 1, ny = y * 5.2, ex = x * 10 - sx * 130, mid = (500 + ex) / 2;
-      const state = !ids.length ? "idle" : doingN ? "busy" : "live";
+      const state = (!ids.length ? "idle" : doingN ? "busy" : "live") + (dept(picked) && picked !== d.id ? " dim" : "");
       const id = `lk-${esc(d.id)}`;
       const link = `<path id="${id}" class="map-link ${state}" d="M500 260 C ${mid} 260, ${mid} ${ny}, ${ex} ${ny}" style="--c: var(--d-${esc(d.id)})"/>`;
       const dot = (k, back) => `<circle r="${back ? 5 : 4.5}" class="map-dot${back ? " back" : ""}" style="--c: ${back ? "var(--st-published)" : `var(--d-${esc(d.id)})`}"><animateMotion dur="3.6s" begin="${(k * 1.2 + (back ? 0.6 : 0)).toFixed(1)}s" repeatCount="indefinite"${back ? ' keyPoints="1;0" keyTimes="0;1" calcMode="linear"' : ""}><mpath href="#${id}"/></animateMotion></circle>`;
       const dots = Array.from({ length: Math.min(doingN, 3) }, (_, k) => dot(k, false)).concat(Array.from({ length: Math.min(pubN, 3) }, (_, k) => dot(k, true))).join("");
       const line = ids.length ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: pubN })].join(" · ") : "";
       const html = `
-        <a class="map-node ${state}" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)}); left: ${x}%; top: ${y}%">
+        <a class="map-node ${state}" href="#/dept/${esc(d.id)}" data-board-filter="${esc(d.id)}" style="--c: var(--d-${esc(d.id)}); left: ${x}%; top: ${y}%">
           <span class="map-node-top">${deptIcon(d.id)}<span class="map-node-name">${esc(d.name)}</span>${doingN ? `<span class="map-live">${t("mapLive", { n: doingN })}</span>` : ""}</span>
           <span class="map-node-head">${esc(d.head.name)}</span>
           <span class="flow-bar mini" aria-hidden="true">${bar}</span>
@@ -347,15 +348,12 @@
   }
 
   function viewNext() {
-    return hero({
-      hideTitle: true,
-      title: L("upNext"),
-      after: companyMap(),
-      stats: flowStrip(S().episodes, "all")
-    });
+    const b = boardParts();
+    return hero({ hideTitle: true, title: L("upNext"), after: companyMap() + b.controls }) + b.lanes;
   }
 
-  function viewBoard() {
+  // the controls (department bar) and the five lanes; the home page puts them under the company map
+  function boardParts() {
     let filter = "all";
     try { filter = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
     const scoped = filter.startsWith("ch:") ? channel(filter.slice(3)) : filter.startsWith("wk:") ? work(filter.slice(3)) : null;
@@ -408,8 +406,11 @@
     }).join("");
     const idleN = items.filter(isIdle).length;
     const quiet = idleN ? `<p class="rail-note"><span class="quiet-ring"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "";
-    return hero({ hideTitle: true, title: L("board"), after: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}` }) +
-      `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
+    const pageLink = dept(filter) ? `<p class="deptlink"><a href="#/dept/${esc(filter)}">${t("openDept", { name: dept(filter).name })}${icon("chev", "icon chev")}</a></p>` : "";
+    return {
+      controls: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}${pageLink}`,
+      lanes: `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`
+    };
   }
 
   // ---------- cost and results (v1.0): tables for a set of episodes ----------
@@ -631,7 +632,6 @@
     const r = route();
     renderNav(r);
     main.innerHTML = ribbon() + (
-      r.view === "board" ? viewBoard() :
       r.view === "dept" ? viewDept(r.id) :
       r.view === "channel" ? viewChannel(r.id) :
       r.view === "work" ? viewWork(r.id) : viewNext());
@@ -1064,11 +1064,11 @@
     if ("flowStage" in ds) {
       try { localStorage.setItem("bellstudio:board", ds.flowScope || "all"); } catch { /* ignore */ }
       boardFocus.stage = ds.flowStage;
-      location.hash = "#/board";
+      location.hash = "#/next";
       return;
     }
     if ("boardMore" in ds) { boardFocus.all = !boardFocus.all; return render(); }
-    if ("boardFilter" in ds) { try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
+    if ("boardFilter" in ds) { e.preventDefault(); try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
 
     if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined });
     if ("editWork" in ds) return editWork(ds.editWork);
@@ -1101,7 +1101,7 @@
     render();
     window.scrollTo(0, 0);
     const lane = main.querySelector("[data-focus]");
-    if (lane && window.matchMedia("(max-width: 980px)").matches) lane.scrollIntoView({ block: "start" });
+    if (lane) lane.scrollIntoView({ block: "start" });
   });
   render();
 })();
