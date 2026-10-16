@@ -349,7 +349,7 @@
     return `
       <div class="map" role="group" aria-label="${esc(S().company.name)}">
         <svg class="map-svg" viewBox="0 0 1000 520" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.dots).join("")}</svg>
-        <div class="map-core"><span class="map-orb" aria-hidden="true"></span><span class="logo-mark" role="img" aria-label="${esc(S().ceo?.name || "Bell")}"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></div>
+        <button class="map-core" type="button" data-board-filter="all" aria-pressed="${picked === "all"}" title="${esc(L("showAll"))}" aria-label="${esc(L("showAll"))}"><span class="map-orb" aria-hidden="true"></span><span class="logo-mark" aria-hidden="true"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></button>
         ${nodes.map((x) => x.html).join("")}
       </div>`;
   }
