@@ -193,7 +193,7 @@
       <button type="button" data-export>${t("export")}</button><button type="button" data-reset>${t("reset")}</button></span></div>`;
   }
 
-  function hero({ logo = false, titleLogo = "", context = "", title, lede = "", actions = "", stats = null, after = "" }) {
+  function hero({ logo = false, titleFx = false, titleLogo = "", context = "", title, lede = "", actions = "", stats = null, after = "" }) {
     return `
       <section class="band hero">
         <div class="inner">
@@ -201,7 +201,7 @@
           ${context ? `<div class="context">${context}</div>` : ""}
           ${titleLogo && BRAND_ICONS.includes(titleLogo)
             ? `<h1 class="logo-title"><span class="brand-icon big bi-${esc(titleLogo)}" aria-hidden="true"></span><span class="visually-hidden">${esc(title)}</span></h1>`
-            : `<h1>${esc(title)}</h1>`}
+            : `<h1${titleFx ? ' class="fx"' : ""}>${esc(title)}</h1>`}
           ${lede ? `<p class="lede">${lede}</p>` : ""}
           ${actions ? `<div class="hero-actions">${actions}</div>` : ""}
           ${after}
@@ -299,6 +299,7 @@
 
     return hero({
       logo: true,
+      titleFx: true,
       title: L("upNext"),
       stats: flowStrip(all, "all")
     }) + `

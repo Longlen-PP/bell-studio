@@ -155,6 +155,11 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
 .context .sep { color: var(--ink-3); font-weight: 400; }
 .hero h1 { font-size: clamp(44px, 6.4vw, 80px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; overflow-wrap: anywhere; text-wrap: balance; }
 html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
+/* Overview title: ink with a slow sweep of the four platform colors */
+.hero h1.fx { color: transparent; background: linear-gradient(100deg, var(--ink) 0%, var(--ink) 41%, var(--d-facebook) 45%, var(--d-tiktok) 48.5%, var(--d-shopee) 52%, var(--d-youtube) 55.5%, var(--ink) 59%, var(--ink) 100%) 0 0 / 420% 100%;
+  -webkit-background-clip: text; background-clip: text; animation: title-sweep 9s ease-in-out infinite; }
+@keyframes title-sweep { 0%, 15% { background-position: 100% 0; } 85%, 100% { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .hero h1.fx { animation: none; background-position: 100% 0; } }
 .lede { margin: 22px auto 0; max-width: 720px; font-size: 21px; line-height: 1.45; color: var(--ink-2); text-wrap: balance; }
 .lede strong, .copy strong { color: var(--ink); font-weight: 600; }
 .hero-actions { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
