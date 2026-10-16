@@ -152,6 +152,8 @@
   // ---------- floating bar ----------
   const menuOpen = new Set();
   let findingsOpen = false;
+  // Ize paused the key-findings panel on 2026-10-17 (too little data yet); flip to true to bring it back
+  const FINDINGS_ON = false;
   function renderNav(r) {
     const cur = (cond) => (cond ? ' aria-current="page"' : "");
     const inDept = ["dept", "channel", "work"].includes(r.view);
@@ -466,9 +468,9 @@
     }
 
     // key findings: only on request
-    const toggle = `<p class="find-toggle"><button class="btn btn-outline" type="button" data-findings-toggle aria-expanded="${findingsOpen}">${icon("chev", "icon chev")}${L(findingsOpen ? "findHide" : "findBtn")}</button></p>`;
+    const toggle = !FINDINGS_ON ? "" : `<p class="find-toggle"><button class="btn btn-outline" type="button" data-findings-toggle aria-expanded="${findingsOpen}">${icon("chev", "icon chev")}${L(findingsOpen ? "findHide" : "findBtn")}</button></p>`;
     let panel = "";
-    if (findingsOpen) {
+    if (FINDINGS_ON && findingsOpen) {
       const list = findings(items, goalInfo).map((f) => `<li>${f}</li>`).join("");
       const news = window.STUDIO_NEWS || { items: [], updated: "" };
       const picks = (news.items || []).filter((n) => filter === "all" ? true : (n.dept === filter || n.dept === "all"));
