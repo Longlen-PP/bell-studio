@@ -184,6 +184,18 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 .link { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .board [data-focus] .lane-head { box-shadow: 0 3px 0 -1px var(--sc); padding-bottom: 8px; }
 
+/* department cards on the overview */
+.dept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.dept-card { display: grid; gap: 12px; align-content: start; padding: 26px 26px 24px; border-radius: 28px; background: var(--pane); color: var(--ink); text-decoration: none; transition: transform 300ms var(--ease), box-shadow 300ms var(--ease); }
+.dept-card:hover { transform: scale(1.012); box-shadow: var(--shadow-md); }
+.dept-card-top { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; letter-spacing: -0.025em; }
+.dept-card-top .brand-icon { width: 30px; height: 30px; }
+.dept-card-head { font-size: 15px; color: var(--ink-2); margin-top: -6px; }
+.flow-bar.mini { height: 6px; margin-top: 4px; }
+.dept-card-line { font-size: 15px; color: var(--ink-2); text-wrap: balance; }
+.dept-card-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
+.dept-card-cta .chev { width: 13px; height: 13px; color: var(--ink-3); }
+
 .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 .sec-head h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
 html[lang="th"] .sec-head h2 { letter-spacing: -0.005em; line-height: 1.3; }

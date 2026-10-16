@@ -279,24 +279,37 @@
     const ideas = all.filter((e) => e.stage === "idea");
     const published = all.filter((e) => e.stage === "published");
     const recent = published.slice().sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated))).slice(0, 5);
-    const lonely = S().departments.filter((d) => !S().channels.some((c) => c.dept === d.id));
-    const hasCh = S().channels.length > 0;
-    const lonelyRows = lonely.map((d) => `
-      <a class="row" href="#/dept/${esc(d.id)}">
-        ${deptIcon(d.id)}
-        <span class="row-main"><span class="row-title">${esc(d.name)}</span><span class="row-sub">${t("needsChannelRow", { head: d.head.name })}</span></span>
-        ${icon("chev", "icon chev")}
-      </a>`);
+    const deptCards = S().departments.map((d) => {
+      const ids = S().channels.filter((c) => c.dept === d.id).map((c) => c.id);
+      const eps = S().episodes.filter((e) => ids.includes(work(e.work)?.channel));
+      const works = S().works.filter((w) => ids.includes(w.channel)).length;
+      const bar = eps.length ? STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("") : "";
+      const line = ids.length
+        ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: eps.filter((e) => e.stage === "published").length })].join(" · ")
+        : "";
+      return `
+        <a class="dept-card" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
+          <span class="dept-card-top">${deptIcon(d.id)}<span class="dept-card-name">${esc(d.name)}</span></span>
+          <span class="dept-card-head">${esc(d.head.name)}</span>
+          <span class="flow-bar mini" aria-hidden="true">${bar}</span>
+          ${ids.length ? `<span class="dept-card-line">${line}</span>` : `<span class="dept-card-cta">${L("dcSetup")}${icon("chev", "icon chev")}</span>`}
+        </a>`;
+    }).join("");
+    const nextRows = doing.concat(ideas).map((e) => epRow(e));
 
     return hero({
       logo: true,
       title: L("upNext"),
       stats: flowStrip(all, "all")
-    }) +
-      band(t("secInProgress"), doing.map((e) => epRow(e)), t("emptyInProgress"), { gray: true }) +
-      band(t("secIdeas"), ideas.map((e) => epRow(e)), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
-      (lonely.length ? band(t("secNeedsChannel"), lonelyRows, "", { gray: true }) : "") +
-      band(t("secRecent"), recent.map((e) => epRow(e)), t("emptyPublished"), { gray: !lonely.length });
+    }) + `
+      <section class="band gray">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${L("departments")}</h2></div>
+          <div class="dept-grid">${deptCards}</div>
+        </div>
+      </section>` +
+      (nextRows.length ? band(t("secNextUp"), nextRows, "") : "") +
+      (recent.length ? band(t("secRecent"), recent.map((e) => epRow(e)), "", { gray: !nextRows.length }) : "");
   }
 
   function viewBoard() {

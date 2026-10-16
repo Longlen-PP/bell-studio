@@ -2,7 +2,7 @@
 // {name} placeholders are filled by t(key, vars); variables are HTML-escaped by t().
 window.BELL_I18N = {
   en: {
-    upNext: "Up Next", board: "Board", departments: "Departments", new: "New",
+    upNext: "Overview", board: "Board", departments: "Departments", new: "New",
     newWork: "New work", newChannel: "New channel", newChar: "New character", newLoc: "New location",
     editDept: "Edit department", editChannel: "Edit channel", editWork: "Edit work", editChar: "Edit character", editLoc: "Edit location",
     newEp_clip: "New clip", newEp_ep: "New EP", newEp_video: "New video", newEp_session: "New session",
@@ -10,6 +10,7 @@ window.BELL_I18N = {
     menu: "Menu", close: "Close", langLabel: "Language",
 
     st_idea: "Idea", st_script: "Script", st_producing: "Producing", st_editing: "Editing", st_published: "Published",
+    secNextUp: "Up next", dcPub: "{pub} published", dcSetup: "Set up the first channel",
     flowAria: "Where everything stands", flowOpen: "Open {stage} on the Board", flowPub: "<strong>{pub} of {total}</strong> published", flowNext: "Closest to done:",
     flowEmpty: "Nothing here yet. Start one with + New.", flowAllDone: "Everything here is published.",
     st_active: "Active", st_paused: "Paused",
@@ -99,7 +100,7 @@ window.BELL_I18N = {
   },
 
   th: {
-    upNext: "สิ่งที่ต้องทำต่อ", board: "บอร์ดงาน", departments: "แผนก", new: "สร้างใหม่",
+    upNext: "ภาพรวม", board: "บอร์ดงาน", departments: "แผนก", new: "สร้างใหม่",
     newWork: "งานใหม่", newChannel: "ช่องใหม่", newChar: "ตัวละครใหม่", newLoc: "สถานที่ใหม่",
     editDept: "แก้ไขแผนก", editChannel: "แก้ไขช่อง", editWork: "แก้ไขงาน", editChar: "แก้ไขตัวละคร", editLoc: "แก้ไขสถานที่",
     newEp_clip: "คลิปใหม่", newEp_ep: "EP ใหม่", newEp_video: "วิดีโอใหม่", newEp_session: "รอบไลฟ์ใหม่",
@@ -107,6 +108,7 @@ window.BELL_I18N = {
     menu: "เมนู", close: "ปิด", langLabel: "ภาษา",
 
     st_idea: "ไอเดีย", st_script: "เขียนบท", st_producing: "กำลังผลิต", st_editing: "ตัดต่อ", st_published: "ลงแล้ว",
+    secNextUp: "ต้องทำต่อ", dcPub: "ลงแล้ว {pub}", dcSetup: "ตั้งช่องแรก",
     flowAria: "สถานะงานทั้งหมด", flowOpen: "ดูขั้น {stage} บน Board", flowPub: "<strong>ลงแล้ว {pub} จาก {total}</strong>", flowNext: "ใกล้เสร็จที่สุด:",
     flowEmpty: "ยังไม่มีอะไรที่นี่ เริ่มจากปุ่ม + New", flowAllDone: "ลงครบทุกตอนแล้ว",
     st_active: "ใช้งานอยู่", st_paused: "พัก",
