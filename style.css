@@ -350,10 +350,12 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
 .lane-head h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
 .lane-head .count { color: var(--ink-3); font-size: 20px; font-weight: 600; }
 .lane { display: grid; gap: 14px; }
-.card { display: block; width: 100%; padding: 20px 22px; border: 0; text-align: left; cursor: pointer; color: var(--ink); background: var(--pane); border-radius: 22px; transition: box-shadow 250ms var(--ease), transform 250ms var(--ease); }
+.card { display: block; width: 100%; padding: 16px 20px; border: 0; text-align: left; cursor: pointer; color: var(--ink); background: var(--pane); border-radius: 22px; transition: box-shadow 250ms var(--ease), transform 250ms var(--ease); }
 .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .card .row-title { font-size: 17px; }
-.card-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.more-btn { width: 100%; padding: 10px; border: 1px dashed var(--hairline); border-radius: 16px; background: none; color: var(--ink-2); font: inherit; font-size: 14px; cursor: pointer; }
+.more-btn:hover { border-color: var(--ink-3); color: var(--ink); }
+.card-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--ink-3); }
 .lane .empty { padding: 10px 6px; font-size: 15px; }
 
 /* ---------- inspector ---------- */

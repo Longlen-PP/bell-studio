@@ -235,7 +235,7 @@
 
   // ---------- the pipeline strip: one layout on every page, counts the episodes in scope ----------
   // scope is what the Board filters to when a stage is clicked: "all" | <dept id> | "ch:<id>" | "wk:<id>"
-  const boardFocus = { stage: null };
+  const boardFocus = { stage: null, all: false };
   function flowStrip(eps, scope, facts = "") {
     const counts = STAGES.map((s) => eps.filter((e) => e.stage === s).length);
     const total = eps.length, pub = counts[STAGES.length - 1];
@@ -345,21 +345,12 @@
   }
 
   function viewNext() {
-    const all = S().episodes;
-    const doing = all.filter((e) => IN_PROGRESS.includes(e.stage));
-    const ideas = all.filter((e) => e.stage === "idea");
-    const published = all.filter((e) => e.stage === "published");
-    const recent = published.slice().sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated))).slice(0, 5);
-    const nextRows = doing.concat(ideas).map((e) => epRow(e));
-
     return hero({
       hideTitle: true,
       title: L("upNext"),
       after: companyMap(),
-      stats: flowStrip(all, "all")
-    }) +
-      (nextRows.length ? band(t("secNextUp"), nextRows, "", { gray: true }) : "") +
-      (recent.length ? band(t("secRecent"), recent.map((e) => epRow(e)), "", { gray: !nextRows.length }) : "");
+      stats: flowStrip(S().episodes, "all")
+    });
   }
 
   function viewBoard() {
@@ -377,20 +368,30 @@
     const items = S().episodes.filter(inScope);
     const focus = boardFocus.stage;
     boardFocus.stage = null;
+    const LIMIT = 3;
     const lanes = STAGES.map((s) => {
-      const cards = items.filter((e) => e.stage === s);
+      let cards = items.filter((e) => e.stage === s);
+      // the published lane only grows, so it shows the newest few until asked for more
+      let hidden = 0;
+      if (s === "published") {
+        cards = cards.slice().sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated)));
+        if (!boardFocus.all && cards.length > LIMIT) { hidden = cards.length - LIMIT; cards = cards.slice(0, LIMIT); }
+      }
+      const total = items.filter((e) => e.stage === s).length;
+      const more = s === "published" && total > LIMIT
+        ? `<button class="more-btn" type="button" data-board-more>${hidden ? t("showMore", { n: hidden }) : L("showLess")}</button>` : "";
       return `
         <section aria-label="${stLabel(s)}"${focus === s ? " data-focus" : ""} class="st-${s}">
-          <div class="lane-head"><span class="status st-${s}"></span><h2>${stLabel(s)}</h2><span class="count num">${cards.length}</span></div>
+          <div class="lane-head"><span class="status st-${s}"></span><h2>${stLabel(s)}</h2><span class="count num">${total}</span></div>
           <div class="lane">${cards.length ? cards.map((e) => {
             const w = work(e.work), T = typeOfWork(w);
             return `
               <button class="card" type="button" data-edit-ep="${esc(e.id)}">
-                <span class="row-title">${esc(epName(T, e))}</span>
-                <span class="row-sub">${esc(pathOf(w))}</span>
-                <span class="card-foot"><span>${esc(dept(deptOfWork(w))?.head.name ?? "")}</span><span class="num">${esc(fmtDate(e.date || e.updated))}</span></span>
+                <span class="row-title">${esc(w.title)}</span>
+                <span class="row-sub">${esc(epName(T, e))}</span>
+                <span class="card-foot"><span>${esc(dept(deptOfWork(w))?.name ?? "")}</span><span class="num">${esc(fmtDate(e.date || e.updated))}</span></span>
               </button>`;
-          }).join("") : `<div class="empty">${t("nothingHere")}</div>`}</div>
+          }).join("") + more : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
     return hero({ title: L("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
@@ -959,6 +960,7 @@
       location.hash = "#/board";
       return;
     }
+    if ("boardMore" in ds) { boardFocus.all = !boardFocus.all; return render(); }
     if ("boardFilter" in ds) { try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
 
     if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined });
