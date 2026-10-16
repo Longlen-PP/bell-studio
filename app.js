@@ -237,14 +237,9 @@
   // ---------- the pipeline strip: one layout on every page, counts the episodes in scope ----------
   // scope is what the Board filters to when a stage is clicked: "all" | <dept id> | "ch:<id>" | "wk:<id>"
   const boardFocus = { stage: null, all: false };
-  function flowStrip(eps, scope, facts = "") {
-    const counts = STAGES.map((s) => eps.filter((e) => e.stage === s).length);
-    const total = eps.length, pub = counts[STAGES.length - 1];
-    const cells = STAGES.map((s, i) => `
-      <button class="flow-stage st-${s}${counts[i] ? "" : " zero"}${IN_PROGRESS.includes(s) && counts[i] ? " active" : ""}" type="button" data-flow-stage="${s}" data-flow-scope="${esc(scope)}" title="${esc(t("flowOpen", { stage: stLabel(s) }))}">
-        <span class="flow-node"><span class="flow-num">${counts[i]}</span></span>
-        <span class="flow-label">${stLabel(s)}</span>
-      </button>${i < STAGES.length - 1 ? `<span class="flow-link${counts[i] ? " moving" : ""}" aria-hidden="true"></span>` : ""}`).join("");
+  // "2 of 9 published · Closest to done: ..." (or the empty-state sentence)
+  function flowNextLine(eps) {
+    const total = eps.length, pub = eps.filter((e) => e.stage === "published").length;
     const open = eps.filter((e) => e.stage !== "published");
     let next;
     if (!total) next = L("flowEmpty");
@@ -254,6 +249,18 @@
         || String(a.updated || "").localeCompare(String(b.updated || "")))[0];
       next = `${t("flowPub", { pub, total })} · ${L("flowNext")} <button class="link" type="button" data-edit-ep="${esc(lead.id)}">${esc(epName(typeOfWork(work(lead.work)), lead))}</button> <span class="flow-at">${stLabel(lead.stage)}</span>`;
     }
+    return next;
+  }
+
+  function flowStrip(eps, scope, facts = "") {
+    const counts = STAGES.map((s) => eps.filter((e) => e.stage === s).length);
+    const total = eps.length, pub = counts[STAGES.length - 1];
+    const cells = STAGES.map((s, i) => `
+      <button class="flow-stage st-${s}${counts[i] ? "" : " zero"}${IN_PROGRESS.includes(s) && counts[i] ? " active" : ""}" type="button" data-flow-stage="${s}" data-flow-scope="${esc(scope)}" title="${esc(t("flowOpen", { stage: stLabel(s) }))}">
+        <span class="flow-node"><span class="flow-num">${counts[i]}</span></span>
+        <span class="flow-label">${stLabel(s)}</span>
+      </button>${i < STAGES.length - 1 ? `<span class="flow-link${counts[i] ? " moving" : ""}" aria-hidden="true"></span>` : ""}`).join("");
+    const next = flowNextLine(eps);
     return `
       <div class="flow" role="group" aria-label="${esc(L("flowAria"))}">
         ${facts ? `<p class="flow-facts">${facts}</p>` : ""}
@@ -392,7 +399,7 @@
         ? `<button class="more-btn" type="button" data-board-more>${hidden ? t("showMore", { n: hidden }) : L("showLess")}</button>` : "";
       return `
         <section aria-label="${stLabel(s)}"${focus === s ? " data-focus" : ""} class="st-${s}">
-          <div class="lane-head"><span class="status st-${s}"></span><h2>${stLabel(s)}</h2><span class="count num">${total}</span></div>
+          <h2 class="lane-title"><span class="status st-${s}"></span>${stLabel(s)} <span class="count num">${total}</span></h2>
           <div class="lane">${cards.length ? cards.map((e) => {
             const w = work(e.work), T = typeOfWork(w);
             return `
@@ -401,15 +408,28 @@
                 <span class="row-sub">${esc(epName(T, e))}</span>
                 <span class="card-foot"><span>${esc(dept(deptOfWork(w))?.name ?? "")}</span><span class="num">${esc(fmtDate(e.date || e.updated))}</span></span>
               </button>`;
-          }).join("") + more : `<div class="empty">${t("nothingHere")}</div>`}</div>
+          }).join("") + more : `<div class="lane-empty" aria-hidden="true"></div>`}</div>
         </section>`;
     }).join("");
     const idleN = items.filter(isIdle).length;
     const quiet = idleN ? `<p class="rail-note"><span class="quiet-ring"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "";
+    // the five circles sit right over their columns and work as the column headers
+    const counts = STAGES.map((st) => items.filter((e) => e.stage === st).length);
+    const heads = STAGES.map((st, i) => `
+      <div class="bh-cell">
+        <button class="flow-stage st-${st}${counts[i] ? "" : " zero"}${IN_PROGRESS.includes(st) && counts[i] ? " active" : ""}${focus === st ? " picked" : ""}" type="button" data-lane-focus="${st}" title="${esc(t("flowOpen", { stage: stLabel(st) }))}">
+          <span class="flow-node"><span class="flow-num">${counts[i]}</span></span>
+          <span class="flow-label">${stLabel(st)}</span>
+        </button>${i < STAGES.length - 1 ? `<span class="flow-link bh-link${counts[i] ? " moving" : ""}" aria-hidden="true"></span>` : ""}
+      </div>`).join("");
+    const nextLine = flowNextLine(items);
     const pageLink = dept(filter) ? `<p class="deptlink"><a href="#/dept/${esc(filter)}">${t("openDept", { name: dept(filter).name })}${icon("chev", "icon chev")}</a></p>` : "";
     return {
       controls: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}${pageLink}`,
-      lanes: `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`
+      lanes: `<section class="band gray"><div class="inner wide">
+        ${nextLine ? `<p class="flow-next board-next">${nextLine}</p>` : ""}
+        <div class="board-head" role="group" aria-label="${esc(L("flowAria"))}">${heads}</div>
+        <div class="board">${lanes}</div></div></section>`
     };
   }
 
@@ -1065,6 +1085,13 @@
       try { localStorage.setItem("bellstudio:board", ds.flowScope || "all"); } catch { /* ignore */ }
       boardFocus.stage = ds.flowStage;
       location.hash = "#/next";
+      return;
+    }
+    if ("laneFocus" in ds) {
+      boardFocus.stage = boardFocus.stage === ds.laneFocus ? null : ds.laneFocus;
+      render();
+      const lane = main.querySelector("[data-focus]");
+      if (lane && window.matchMedia("(max-width: 980px)").matches) lane.scrollIntoView({ block: "start" });
       return;
     }
     if ("boardMore" in ds) { boardFocus.all = !boardFocus.all; return render(); }
