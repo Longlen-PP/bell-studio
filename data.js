@@ -12,6 +12,7 @@
 //   รูป/ลิงก์ (cover, image, link) = ลิงก์แชร์ Google Drive หรือ URL https — เว้นว่างได้
 // ต้นทุนและผลลัพธ์ของตอน (v1.0): length (วินาที) · engine (เครื่องมือที่ใช้ทำ) · cost (บาท ตัวเลขล้วน) · stats {views likes comments shares saves orders} · statsAt (วันที่เก็บตัวเลข)
 //   ⚠️ ข้อมูลกลุ่มนี้เป็นของส่วนตัว: กรอกบนเว็บเก็บในเบราว์เซอร์ของ Ize เท่านั้น Bell ห้ามเขียนลง data.js ที่ push ขึ้นเว็บสาธารณะ (ไม่มีรายได้/ค่าคอมในโครงสร้างนี้)
+// แผนกไม่มีหัวหน้าแยก (Ize สั่ง 2026-10-17) Bell ดูแลทุกแผนก ความรู้ประจำแผนกอยู่ที่ .knowledge/departments.md
 // platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
 // status ของช่อง: "active" = ใช้งานอยู่ (ค่าตั้งต้น) · "paused" = พัก
 
@@ -43,7 +44,6 @@ window.STUDIO = {
       code: "FBK",
       name: "Facebook",
       emoji: "📘",
-      head: { name: "Luna", gender: "ญ", emoji: "🎭", persona: "นักเล่าเรื่องสายดราม่า อินกับตัวละคร เข้าใจคนดูเพจไทย" },
       mission: "ละครแนวตั้ง ซีรีส์ดราม่า สเก็ตช์ตลก",
       roles: [
         { title: "คนเขียนบท", duty: "พล็อต บทพูด cliffhanger ปิดแต่ละตอน" },
@@ -59,7 +59,6 @@ window.STUDIO = {
       code: "YTB",
       name: "YouTube",
       emoji: "▶️",
-      head: { name: "Shadow", gender: "ช", emoji: "📚", persona: "นักเล่าเรื่องใจเย็น ละเอียด ชอบประวัติศาสตร์และงานเด็ก" },
       mission: "เล่าเรื่อง สารคดี เพลงเด็ก",
       roles: [
         { title: "คนเขียนสคริปต์ & พากย์", duty: "สคริปต์ยาว และจังหวะเสียงพากย์" },
@@ -75,7 +74,6 @@ window.STUDIO = {
       code: "TTK",
       name: "TikTok",
       emoji: "🎵",
-      head: { name: "Queen", gender: "ญ", emoji: "💃", persona: "สายแฟชั่น ไวกับเทรนด์ รู้ว่าคลิปไหนหยุดนิ้วคนดู" },
       mission: "AI Influencer แฟชั่น/ลุคสวย และคลิปไม่ออกกล้อง",
       roles: [
         { title: "ฝ่ายสร้างตัวตน AI", duty: "ออกแบบ AI Influencer ที่ใช้ซ้ำได้" },
@@ -91,7 +89,6 @@ window.STUDIO = {
       code: "SHP",
       name: "Shopee",
       emoji: "🛒",
-      head: { name: "Axe", gender: "ช", emoji: "📦", persona: "นักขายสายตัวเลข คัดสินค้าเก่ง ไม่เคลมเกินจริง" },
       mission: "ปักตะกร้า Affiliate และ Shopee Video (เป็นเจ้าของคลิปขายของทุกแพลตฟอร์ม)",
       roles: [
         { title: "ฝ่ายคัดสินค้า", duty: "เลือกสินค้า เช็คราคาและค่าคอมก่อนทำ" },

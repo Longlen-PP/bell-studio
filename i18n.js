@@ -31,13 +31,13 @@ window.BELL_I18N = {
     emptyInProgress: "Nothing is in progress. Move an idea forward when you start on it.",
     emptyIdeas: "No ideas waiting.", emptyNoChannels: "Create a channel first with + New above, then add works to it.",
     emptyPublished: "Nothing published yet.",
-    needsChannelRow: "{head} has no channel yet",
+    needsChannelRow: "No channel yet",
 
     boardLede: "Every episode and clip, <strong>by stage</strong>.", all: "All", nothingHere: "Nothing here.",
 
     ledBy: "Led by <strong>{head}</strong>.", statChannels: "Channels", statWorks: "Works", statClipsPublished: "Published",
     secChannels: "Channels", secTeam: "Team", secRules: "Rules", secSkills: "Skills",
-    noChannelYet: "{head} has no channel yet.", noChannelHint: "Create one with + New above.",
+    noChannelYet: "No channel yet.", noChannelHint: "Create one with + New above.",
     noRoles: "No roles yet.", noRules: "No rules yet.", noSkills: "No skills listed.",
 
     secWorks: "Works", noWorksHint: "No works yet. Add one with + New above.",
@@ -60,7 +60,7 @@ window.BELL_I18N = {
     f_status: "Status", f_note: "Note", f_notePh: "Anything worth remembering",
     f_photoHint: "Paste a Google Drive share link (set to “Anyone with the link”) or any https image URL.",
     f_preview: "Image preview appears here", f_cantLoad: "Can't load this link. Check it is shared with “Anyone with the link”.",
-    f_head: "Head", f_persona: "Persona", f_mission: "Mission",
+    f_mission: "Mission",
     f_team: "Team", f_teamHint: "One role per line: Role — what they do",
     f_rules: "Rules", f_rulesHint: "One rule per line", f_skills: "Skills", f_skillsHint: "One skill per line",
 
@@ -88,7 +88,7 @@ window.BELL_I18N = {
     editDeptTitle: "Edit {name}",
 
     save: "Save", cancel: "Cancel", delete: "Delete", deleteWith: "Delete with {what}", confirmDelete: "Confirm delete",
-    errTitle: "Give it a title.", errName: "Give it a name.", errHead: "The department needs a head.",
+    errTitle: "Give it a title.", errName: "Give it a name.",
 
     toastWorkAdded: "Work added", toastWorkSaved: "Work saved", toastWorkDeleted: "Work deleted",
     toastEpAdded: "Added", toastEpSaved: "Saved", toastEpDeleted: "Deleted",
@@ -137,13 +137,13 @@ window.BELL_I18N = {
     emptyInProgress: "ยังไม่มีงานที่กำลังทำ เริ่มทำอันไหนก็เปลี่ยนสถานะได้เลย",
     emptyIdeas: "ยังไม่มีไอเดียรอ", emptyNoChannels: "สร้างช่องก่อนที่ปุ่ม + สร้างใหม่ด้านบน แล้วค่อยเพิ่มงานลงในช่อง",
     emptyPublished: "ยังไม่มีงานที่ลงแล้ว",
-    needsChannelRow: "{head} ยังไม่มีช่อง",
+    needsChannelRow: "ยังไม่มีช่อง",
 
     boardLede: "ทุกตอนและทุกคลิป <strong>แยกตามขั้นตอน</strong>", all: "ทั้งหมด", nothingHere: "ว่าง",
 
     ledBy: "ดูแลโดย <strong>{head}</strong>", statChannels: "ช่อง", statWorks: "งาน", statClipsPublished: "ลงแล้ว",
     secChannels: "ช่อง", secTeam: "ทีม", secRules: "กฎ", secSkills: "สกิล",
-    noChannelYet: "{head} ยังไม่มีช่อง", noChannelHint: "สร้างช่องได้ที่ปุ่ม + สร้างใหม่ด้านบน",
+    noChannelYet: "ยังไม่มีช่อง", noChannelHint: "สร้างช่องได้ที่ปุ่ม + สร้างใหม่ด้านบน",
     noRoles: "ยังไม่มีบทบาท", noRules: "ยังไม่มีกฎ", noSkills: "ยังไม่มีสกิล",
 
     secWorks: "งาน", noWorksHint: "ยังไม่มีงาน เพิ่มได้ที่ปุ่ม + สร้างใหม่ด้านบน",
@@ -166,7 +166,7 @@ window.BELL_I18N = {
     f_status: "สถานะ", f_note: "โน้ต", f_notePh: "อะไรที่ควรจำไว้",
     f_photoHint: "วางลิงก์แชร์จาก Google Drive (ตั้งเป็น “ทุกคนที่มีลิงก์”) หรือ URL รูปที่ขึ้นต้นด้วย https",
     f_preview: "ตัวอย่างรูปจะแสดงตรงนี้", f_cantLoad: "โหลดลิงก์นี้ไม่ได้ เช็คว่าแชร์เป็น “ทุกคนที่มีลิงก์” แล้ว",
-    f_head: "หัวหน้าแผนก", f_persona: "บุคลิก", f_mission: "งานหลัก",
+    f_mission: "งานหลัก",
     f_team: "ทีม", f_teamHint: "บรรทัดละบทบาท: บทบาท — ทำอะไร",
     f_rules: "กฎ", f_rulesHint: "บรรทัดละข้อ", f_skills: "สกิล", f_skillsHint: "บรรทัดละสกิล",
 
@@ -194,7 +194,7 @@ window.BELL_I18N = {
     editDeptTitle: "แก้ไขแผนก {name}",
 
     save: "บันทึก", cancel: "ยกเลิก", delete: "ลบ", deleteWith: "ลบพร้อม{what}", confirmDelete: "ยืนยันการลบ",
-    errTitle: "ใส่ชื่อก่อนนะ", errName: "ใส่ชื่อก่อนนะ", errHead: "ต้องมีหัวหน้าแผนก",
+    errTitle: "ใส่ชื่อก่อนนะ", errName: "ใส่ชื่อก่อนนะ",
 
     toastWorkAdded: "เพิ่มงานแล้ว", toastWorkSaved: "บันทึกงานแล้ว", toastWorkDeleted: "ลบงานแล้ว",
     toastEpAdded: "เพิ่มแล้ว", toastEpSaved: "บันทึกแล้ว", toastEpDeleted: "ลบแล้ว",

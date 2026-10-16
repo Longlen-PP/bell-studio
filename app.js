@@ -162,7 +162,7 @@
       return `
       <div class="menu-group" data-dept-group="${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
         <div class="menu-row">
-          <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
+          <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}</a>
           ${chs.length ? `<button class="menu-fold" type="button" data-dept-toggle="${esc(d.id)}" aria-expanded="${open}" aria-label="${esc(d.name)} · ${esc(n(chs.length, "channel"))}">${icon("chev", "icon chev")}</button>` : ""}
         </div>
         <div class="menu-subs"${open ? "" : " hidden"}>${chs.map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}</div>
@@ -350,7 +350,6 @@
       const html = `
         <a class="map-node ${state}" href="#/dept/${esc(d.id)}" data-board-filter="${esc(d.id)}" style="--c: var(--d-${esc(d.id)}); left: ${x}%; top: ${y}%">
           <span class="map-node-top">${deptIcon(d.id)}<span class="map-node-name">${esc(d.name)}</span>${doingN ? `<span class="map-live">${t("mapLive", { n: doingN })}</span>` : ""}</span>
-          <span class="map-node-head">${esc(d.head.name)}</span>
           <span class="flow-bar mini" aria-hidden="true">${bar}</span>
           ${ids.length ? `<span class="map-node-line">${line}</span>` : `<span class="map-node-cta">${L("dcSetup")}${icon("chev", "icon chev")}</span>`}
         </a>`;
@@ -522,15 +521,14 @@
         </a>`;
     });
     return hero({
-      context: esc(d.head.name),
       titleLogo: id,
       title: d.name,
-      lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
+      lede: `<strong>${esc(d.mission)}</strong>`,
       actions: btn(L("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
       stats: flowStrip(deptEps, id, `${n(chans.length, "channel")} · ${n(workCount, "work")}`)
     }) +
       perfBands(deptEps) +
-      band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} ${t("noChannelHint")}`, { gray: true }) + `
+      band(t("secChannels"), rows, `${t("noChannelYet")} ${t("noChannelHint")}`, { gray: true }) + `
       <section class="band">
         <div class="inner">
           <div class="cols">
@@ -764,7 +762,7 @@
     const body =
       fieldWrap(L("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${esc(L("f_channelPh"))}"`)) +
       fieldWrap(L("f_code"), input("code", c.code || "", 'autocomplete="off" maxlength="5" placeholder="AFF" style="text-transform:uppercase"'), `<span>${esc(L("f_codeHint"))}</span>`) +
-      fieldWrap(L("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept)) +
+      fieldWrap(L("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: d.name })), c.dept)) +
       fieldWrap(L("f_platform"), select("platform", platformList(c.dept, c.platform), c.platform || platformList(c.dept)[0]?.id)) +
       fieldWrap(L("f_type"), select("type", typeOptions, c.type), `<span id="type-hint">${esc(L("typeHint_" + c.type))}</span>`) +
       `<details class="more"${isNew ? "" : " open"}><summary>${t("f_moreDetails")}</summary><div class="more-body">${more}</div></details>`;
@@ -1028,8 +1026,6 @@
   function editDept(id) {
     const d = dept(id);
     const body =
-      fieldWrap(L("f_head"), input("head", d.head.name, 'required autocomplete="off"')) +
-      fieldWrap(L("f_persona"), input("persona", d.head.persona, 'autocomplete="off"')) +
       fieldWrap(L("f_mission"), textarea("mission", d.mission)) +
       fieldWrap(L("f_platforms"), textarea("platforms", (d.platforms || []).join("\n"), 'style="min-height:72px"'), L("f_platformsHint")) +
       fieldWrap(L("f_team"), textarea("roles", d.roles.map((r) => `${r.title} — ${r.duty}`).join("\n")), L("f_teamHint")) +
@@ -1037,11 +1033,9 @@
       fieldWrap(L("f_skills"), textarea("skills", d.skills.join("\n"), 'style="min-height:80px"'), L("f_skillsHint"));
     openInspector(L("editDeptTitle").replace("{name}", d.name), body, {
       onSave(form) {
-        if (!required(form, "head", "errHead")) return;
         const lines = (k) => form.elements[k].value.split("\n").map((x) => x.trim()).filter(Boolean);
         commit((s) => {
           const tgt = s.departments.find((x) => x.id === id);
-          tgt.head = { ...tgt.head, name: form.elements.head.value.trim(), persona: form.elements.persona.value.trim() };
           tgt.mission = form.elements.mission.value.trim();
           tgt.roles = lines("roles").map((l) => { const [title, ...rest] = l.split(/\s+[—-]\s+/); return { title: title.trim(), duty: rest.join(" — ").trim() }; });
           tgt.rules = lines("rules");
