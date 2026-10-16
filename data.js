@@ -1,11 +1,17 @@
 // Bell Studio — source of truth ของ Dashboard (แก้ไฟล์นี้ไฟล์เดียวพอ)
 // ⚠️ เว็บนี้เป็นสาธารณะ: ห้ามใส่รายได้ ยอดคอมมิชชั่น ลิงก์ affiliate ส่วนตัว หรือข้อมูลบัญชี
 //
-// stage ของ pipeline: "idea" = ไอเดีย · "doing" = กำลังทำ · "done" = ลงแล้ว
+// โครงข้อมูล (v2): แผนก → ช่อง → งาน → ตอน/คลิป
+//   channels[].type  = "affiliate" | "series" | "mv" | "story" | "live"   (ตัดสินว่างานในช่องนั้นต้องกรอกอะไร)
+//   works[]          = งาน 1 ชิ้น: สินค้า (affiliate) · เรื่อง (series) · เพลง (mv) · เรื่องเล่า (story) · รอบไลฟ์ (live)
+//                      props = ฟิลด์เฉพาะประเภท · characters/locations = เฉพาะประเภทที่มี · rules = กฎความต่อเนื่อง (series)
+//   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · stage = idea | script | producing | editing | published
+//   รูป/ลิงก์ (cover, image, link) = ลิงก์แชร์ Google Drive หรือ URL https — เว้นว่างได้
 // platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
-// status ของช่อง/สินค้า: "active" = ใช้งานอยู่ · "planned" = วางแผน · "paused" = พัก · "unconfirmed" = รอยืนยัน
+// status ของช่อง: "active" = ใช้งานอยู่ (ค่าตั้งต้น) · "paused" = พัก
 
 window.STUDIO = {
+  v: 2,
   updated: "2026-10-16",
   company: {
     name: "Bell Studio",
@@ -88,22 +94,25 @@ window.STUDIO = {
     }
   ],
 
-  // ---- ลำดับชั้นงาน: แผนก → ช่อง → (สินค้า เฉพาะช่องขายของ) → งาน/คลิป ----
-  // โฟลเดอร์บน Drive ใช้ลำดับเดียวกัน: Bell Studio/<dept>/<ชื่อช่อง>/<ชื่อสินค้าหรืองาน>/
-
-  // ช่อง/บัญชี — id ห้ามซ้ำ, dept = id ของแผนก, kind = "shop" (ช่องขายของ มีสินค้า) หรือ "content"
+  // ---- ช่อง / งาน / ตอน ----
   channels: [
-    { id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", kind: "shop", status: "active", note: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02" }
+    {
+      id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", type: "affiliate", status: "active",
+      concept: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02", audience: "", schedule: "", url: ""
+    }
   ],
 
-  // สินค้า (ใช้กับช่องขายของ) — id ห้ามซ้ำ, channel = id ของช่อง
-  // image = ลิงก์แชร์รูปจาก Google Drive หรือ URL รูป (https) — เว้นว่างได้
-  products: [
-    { id: "kasty-tofu-20l", channel: "affiliate", name: "Kasty Tofu Cat Litter 20L Original", status: "active", image: "", note: "", updated: "2026-10-15" }
+  works: [
+    {
+      id: "kasty-tofu-20l", channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
+      summary: "", cover: "", props: { category: "ทรายแมว" }, characters: [], locations: [], rules: "", note: "", updated: "2026-10-15"
+    }
   ],
 
-  // งาน/คลิป — channel = id ของช่อง, product = id ของสินค้า (ใส่เฉพาะงานขายของ)
-  pipeline: [
-    { channel: "affiliate", product: "kasty-tofu-20l", title: "คลิปขาย 30 วิ", stage: "done", updated: "2026-10-15", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video" }
+  episodes: [
+    {
+      id: "kasty-tofu-20l-1", work: "kasty-tofu-20l", n: 1, title: "คลิปขาย 30 วิ", summary: "", stage: "published",
+      date: "", link: "", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video", updated: "2026-10-15"
+    }
   ]
 };

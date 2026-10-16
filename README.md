@@ -11,7 +11,7 @@ https://longlen-pp.github.io/bell-studio/
 
 ## Structure
 
-- `data.js` — the published data everyone starts from (the source of truth until Firebase sync lands)
+- `data.js` — the published data everyone starts from (departments, channels, works, episodes; the field list is in its header comment)
 - `store.js` — data layer; today it keeps edits in this browser's localStorage, later it will talk to Firestore through the same interface
 - `index.html` / `style.css` / `app.js` — the UI (no build step)
 

@@ -1,5 +1,5 @@
 // Bell Studio dashboard — renders from BellStore and edits it through the inspector.
-// Hierarchy: department → channel → (product, for "shop" channels) → work/clip.
+// Hierarchy: department → channel (typed) → work → episode/clip.
 (function () {
   const store = window.BellStore;
   const $ = (id) => document.getElementById(id);
@@ -11,13 +11,14 @@
   if (!window.BELL_I18N[lang]) lang = "en";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  // t() returns HTML: the template is trusted, every variable is escaped
+  // L() is the plain string (use inside attributes); t() fills {vars} (escaped) and returns trusted HTML
+  const L = (key) => window.BELL_I18N[lang][key] ?? window.BELL_I18N.en[key] ?? key;
   const t = (key, vars = {}) => {
-    const s = window.BELL_I18N[lang][key] ?? window.BELL_I18N.en[key] ?? key;
+    const s = L(key);
     return typeof s === "string" ? s.replace(/\{(\w+)\}/g, (_, k) => esc(vars[k] ?? "")) : s;
   };
   const n = (count, unit) => {
-    const [one, many] = t(`n_${unit}`);
+    const [one, many] = L(`n_${unit}`);
     return `${count} ${count === 1 ? one : many}`;
   };
   function setLang(next) {
@@ -28,29 +29,55 @@
   }
   document.documentElement.lang = lang;
 
-  const STAGES = ["idea", "doing", "done"];
-  const STATUSES = ["active", "planned", "paused", "unconfirmed"];
-  const stLabel = (id) => t(`st_${id}`);
+  // ---------- model: what each channel type asks for ----------
+  const STAGES = ["idea", "script", "producing", "editing", "published"];
+  const IN_PROGRESS = ["script", "producing", "editing"];
+  const stLabel = (id) => L(`st_${id}`);
+
+  const TYPES = {
+    affiliate: { noun: "clip", fields: ["category"], lists: [], rules: false },
+    series: { noun: "ep", fields: ["genre", "epsPlanned", "epLength", "style", "engine"], lists: ["characters", "locations"], rules: true },
+    mv: { noun: "video", fields: ["genre", "lyrics", "epLength", "style", "engine"], lists: ["characters"], rules: false },
+    story: { noun: "ep", fields: ["narrator", "epsPlanned", "epLength", "style", "script"], lists: ["characters"], rules: false },
+    live: { noun: "session", fields: ["when", "duration", "products", "runsheet"], lists: [], rules: false }
+  };
+  const TYPE_IDS = Object.keys(TYPES);
+  const FIELD_KIND = { epsPlanned: "number", lyrics: "link", script: "link", runsheet: "link", products: "textarea", when: "datetime-local" };
+  const defaultType = (deptId) => (deptId === "shopee" ? "affiliate" : "series");
+  const ROLES = ["main", "support", "villain", "other"];
 
   // ---------- data helpers ----------
   const S = () => store.get();
   const dept = (id) => S().departments.find((d) => d.id === id);
   const channel = (id) => S().channels.find((c) => c.id === id);
-  const product = (id) => S().products.find((p) => p.id === id);
-  const deptOf = (work) => channel(work.channel)?.dept;
-  const worksIn = (pred) => S().pipeline.map((w, i) => ({ ...w, _i: i })).filter(pred);
+  const work = (id) => S().works.find((w) => w.id === id);
+  const episode = (id) => S().episodes.find((e) => e.id === id);
+  const worksOf = (chId) => S().works.filter((w) => w.channel === chId);
+  const epsOf = (wId) => S().episodes.filter((e) => e.work === wId).sort((a, b) => a.n - b.n);
+  const typeOfChannel = (chId) => TYPES[channel(chId)?.type] || TYPES.series;
+  const typeOfWork = (w) => typeOfChannel(w.channel);
+  const deptOfWork = (w) => channel(w.channel)?.dept;
+  const epCountIn = (chIds, pred) => S().episodes.filter((e) => chIds.includes(work(e.work)?.channel) && pred(e)).length;
+  const MONTHS = () => L("months");
   const fmtDate = (iso) => {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
-    return m ? `${+m[3]} ${t("months")[+m[2] - 1]} ${m[1]}` : "";
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+    return m ? `${+m[3]} ${MONTHS()[+m[2] - 1]} ${m[1]}` : "";
   };
   const slug = (name) => {
     const base = String(name).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "item";
-    return `${base}-${Math.random().toString(36).slice(2, 6)}`;
+    return `${base}-${store.rid()}`;
   };
   const pathOf = (w) => {
-    const c = channel(w.channel), d = c && dept(c.dept), p = w.product && product(w.product);
-    return [d?.name, c?.name, p?.name].filter(Boolean).join(" › ");
+    const c = channel(w.channel), d = c && dept(c.dept);
+    return [d?.name, c?.name, w.title].filter(Boolean).join(" › ");
   };
+  const epName = (T, e) => `${L("ep_" + T.noun)} ${e.n}${e.title ? " · " + e.title : ""}`;
+  const progress = (w) => {
+    const eps = epsOf(w.id);
+    const pub = eps.filter((e) => e.stage === "published").length;
+    return { eps, pub, total: Math.max(+w.props?.epsPlanned || 0, eps.length) };
+  };
+  const platformShown = (c, d) => (c.platform && c.platform !== d?.name ? c.platform : "");
 
   // Google Drive share link → direct thumbnail; any other https image URL passes through.
   function imageSrc(link) {
@@ -60,6 +87,7 @@
     if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1600`;
     return /^https:\/\//i.test(s) ? s : "";
   }
+  const safeLink = (s) => (/^https?:\/\//i.test(String(s || "").trim()) ? String(s).trim() : "");
 
   const ICONS = {
     plus: '<path d="M12 5v14M5 12h14"/>',
@@ -68,7 +96,8 @@
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
     photo: '<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8"/>',
-    menu: '<path d="M4 8h16M4 16h16"/>'
+    menu: '<path d="M4 8h16M4 16h16"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
   };
   const icon = (name, cls = "icon") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
@@ -86,7 +115,7 @@
     if (view === "board") return { view: "board" };
     if (view === "dept" && dept(id)) return { view: "dept", id };
     if (view === "channel" && channel(id)) return { view: "channel", id };
-    if (view === "product" && product(id)) return { view: "product", id };
+    if ((view === "work" || view === "product") && work(id)) return { view: "work", id };
     return { view: "next" };
   }
   const go = (hash) => { if (location.hash !== hash) location.hash = hash; else render(); };
@@ -100,7 +129,7 @@
   // ---------- floating bar ----------
   function renderNav(r) {
     const cur = (cond) => (cond ? ' aria-current="page"' : "");
-    const inDept = ["dept", "channel", "product"].includes(r.view);
+    const inDept = ["dept", "channel", "work"].includes(r.view);
     const deptMenu = S().departments.map((d) => `
       <div class="menu-group" style="--c: var(--d-${esc(d.id)})">
         <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
@@ -111,16 +140,21 @@
     const ctx = (() => {
       if (r.view === "dept") return { dept: r.id };
       if (r.view === "channel") return { dept: channel(r.id).dept, channel: r.id };
-      if (r.view === "product") { const c = channel(product(r.id).channel); return { dept: c.dept, channel: c.id, product: r.id }; }
+      if (r.view === "work") { const w = work(r.id); return { dept: deptOfWork(w), channel: w.channel, work: r.id }; }
       return {};
     })();
-    const shopCh = (ctx.channel && channel(ctx.channel)?.kind === "shop" ? channel(ctx.channel) : S().channels.find((c) => c.kind === "shop"));
-    const newMenu = `
-      <div class="menu-group">
-        ${S().channels.length ? `<button class="menu-link" type="button" data-new-work="${esc(ctx.channel || "")}" data-product="${esc(ctx.product || "")}" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${t("newClip")}</button>` : ""}
-        ${shopCh ? `<button class="menu-link" type="button" data-new-product="${esc(shopCh.id)}">${icon("plus")}${t("newProduct")}</button>` : ""}
-        <button class="menu-link" type="button" data-new-channel="" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${t("newChannel")}</button>
-      </div>`;
+    const ctxItems = [];
+    if (ctx.work) {
+      const w = work(ctx.work), T = typeOfWork(w);
+      ctxItems.push(`<button class="menu-link" type="button" data-new-ep="${esc(w.id)}">${icon("plus")}${L("newEp_" + T.noun)}</button>`);
+      if (T.lists.includes("characters")) ctxItems.push(`<button class="menu-link" type="button" data-new-char="${esc(w.id)}">${icon("plus")}${L("newChar")}</button>`);
+      if (T.lists.includes("locations")) ctxItems.push(`<button class="menu-link" type="button" data-new-loc="${esc(w.id)}">${icon("plus")}${L("newLoc")}</button>`);
+    }
+    const generic = [
+      S().channels.length ? `<button class="menu-link" type="button" data-new-work="${esc(ctx.channel || "")}" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${L("newWork")}</button>` : "",
+      `<button class="menu-link" type="button" data-new-channel="" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${L("newChannel")}</button>`
+    ].join("");
+    const newMenu = (ctxItems.length ? `<div class="menu-group">${ctxItems.join("")}</div>` : "") + `<div class="menu-group">${generic}</div>`;
 
     nav.innerHTML = `
       <nav class="pillbar" aria-label="Main">
@@ -134,7 +168,7 @@
           </div>
         </div>
         <div class="nav-right">
-          <div class="lang" role="group" aria-label="${t("langLabel")}">
+          <div class="lang" role="group" aria-label="${L("langLabel")}">
             <button type="button" data-lang="th" aria-pressed="${lang === "th"}">TH</button>
             <button type="button" data-lang="en" aria-pressed="${lang === "en"}">EN</button>
           </div>
@@ -142,7 +176,7 @@
             <button class="btn btn-sm" type="button" data-pop="new" aria-expanded="false" aria-controls="pop-new">${icon("plus")}${t("new")}</button>
             <div class="popover" id="pop-new" hidden style="right:0">${newMenu}</div>
           </div>
-          <button class="icon-btn menu-toggle" type="button" data-menu aria-label="${t("menu")}" aria-expanded="false" aria-controls="nav-links">${icon("menu")}</button>
+          <button class="icon-btn menu-toggle" type="button" data-menu aria-label="${L("menu")}" aria-expanded="false" aria-controls="nav-links">${icon("menu")}</button>
         </div>
       </nav>`;
   }
@@ -179,12 +213,17 @@
   const btn = (label, attrs, kind = "", ic = "plus") =>
     `<button class="btn ${kind}" type="button" ${attrs}>${ic ? icon(ic) : ""}${label}</button>`;
 
-  function workRow(w) {
+  function epRow(e, { showPath = true } = {}) {
+    const w = work(e.work);
+    const T = typeOfWork(w);
+    const sub = showPath ? esc(pathOf(w)) : esc(e.summary || "");
     return `
-      <button class="row" type="button" data-edit-work="${w._i}">
-        <span class="status st-${esc(w.stage)}"><span class="visually-hidden">${stLabel(w.stage)}</span></span>
-        <span class="row-main"><span class="row-title">${esc(w.title)}</span><span class="row-sub">${esc(pathOf(w))}</span></span>
-        <span class="row-meta num">${esc(fmtDate(w.updated))}</span>${icon("chev", "icon chev")}
+      <button class="row" type="button" data-edit-ep="${esc(e.id)}">
+        <span class="status st-${esc(e.stage)}"><span class="visually-hidden">${stLabel(e.stage)}</span></span>
+        <span class="row-main"><span class="row-title">${esc(epName(T, e))}</span>${sub ? `<span class="row-sub">${sub}</span>` : ""}</span>
+        <span class="status-text">${stLabel(e.stage)}</span>
+        <span class="row-meta num">${esc(fmtDate(e.date || e.updated))}</span>
+        ${icon("chev", "icon chev")}
       </button>`;
   }
 
@@ -198,12 +237,16 @@
       </section>`;
   }
 
+  const imgTag = (src, alt) =>
+    src ? `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" referrerpolicy="no-referrer" data-fallback>` : "";
+
   // ---------- views ----------
   function viewNext() {
-    const doing = worksIn((w) => w.stage === "doing");
-    const ideas = worksIn((w) => w.stage === "idea");
-    const doneAll = worksIn((w) => w.stage === "done");
-    const done = doneAll.slice().sort((a, b) => String(b.updated).localeCompare(String(a.updated))).slice(0, 5);
+    const all = S().episodes;
+    const doing = all.filter((e) => IN_PROGRESS.includes(e.stage));
+    const ideas = all.filter((e) => e.stage === "idea");
+    const published = all.filter((e) => e.stage === "published");
+    const recent = published.slice().sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated))).slice(0, 5);
     const lonely = S().departments.filter((d) => !S().channels.some((c) => c.dept === d.id));
     const hasCh = S().channels.length > 0;
     const lonelyRows = lonely.map((d) => `
@@ -215,14 +258,14 @@
 
     return hero({
       logo: true,
-      title: t("upNext"),
-      lede: t("nextLede", { doing: n(doing.length, "clip"), ideas: n(ideas.length, "idea"), channels: n(S().channels.length, "channel") }),
-      stats: [[doing.length, t("statInProgress")], [ideas.length, t("statIdeas")], [doneAll.length, t("statPublished")]]
+      title: L("upNext"),
+      lede: t("nextLede", { doing: doing.length, ideas: ideas.length, channels: n(S().channels.length, "channel") }),
+      stats: [[doing.length, L("statInProgress")], [ideas.length, L("statIdeas")], [published.length, L("statPublished")]]
     }) +
-      band(t("secInProgress"), doing.map(workRow), t("emptyInProgress"), { gray: true }) +
-      band(t("secIdeas"), ideas.map(workRow), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
+      band(t("secInProgress"), doing.map((e) => epRow(e)), t("emptyInProgress"), { gray: true }) +
+      band(t("secIdeas"), ideas.map((e) => epRow(e)), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
       (lonely.length ? band(t("secNeedsChannel"), lonelyRows, "", { gray: true }) : "") +
-      band(t("secRecent"), done.map(workRow), t("emptyPublished"), { gray: !lonely.length });
+      band(t("secRecent"), recent.map((e) => epRow(e)), t("emptyPublished"), { gray: !lonely.length });
   }
 
   function viewBoard() {
@@ -231,33 +274,37 @@
     if (filter !== "all" && !dept(filter)) filter = "all";
     const chips = [`<button class="chip" type="button" data-board-filter="all" aria-pressed="${filter === "all"}">${t("all")}</button>`]
       .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}">${deptIcon(d.id)}${esc(d.name)}</button>`)).join("");
-    const items = worksIn((w) => filter === "all" || deptOf(w) === filter);
+    const items = S().episodes.filter((e) => filter === "all" || deptOfWork(work(e.work)) === filter);
     const lanes = STAGES.map((s) => {
-      const cards = items.filter((w) => w.stage === s);
+      const cards = items.filter((e) => e.stage === s);
       return `
         <section aria-label="${stLabel(s)}">
           <div class="lane-head"><span class="status st-${s}"></span><h2>${stLabel(s)}</h2><span class="count num">${cards.length}</span></div>
-          <div class="lane">${cards.length ? cards.map((w) => `
-            <button class="card" type="button" data-edit-work="${w._i}">
-              <span class="row-title">${esc(w.title)}</span>
-              <span class="row-sub">${esc(pathOf(w))}</span>
-              <span class="card-foot"><span>${esc(dept(deptOf(w))?.head.name ?? "")}</span><span class="num">${esc(fmtDate(w.updated))}</span></span>
-            </button>`).join("") : `<div class="empty">${t("nothingHere")}</div>`}</div>
+          <div class="lane">${cards.length ? cards.map((e) => {
+            const w = work(e.work), T = typeOfWork(w);
+            return `
+              <button class="card" type="button" data-edit-ep="${esc(e.id)}">
+                <span class="row-title">${esc(epName(T, e))}</span>
+                <span class="row-sub">${esc(pathOf(w))}</span>
+                <span class="card-foot"><span>${esc(dept(deptOfWork(w))?.head.name ?? "")}</span><span class="num">${esc(fmtDate(e.date || e.updated))}</span></span>
+              </button>`;
+          }).join("") : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
-    return hero({ title: t("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${t("departments")}">${chips}</div>` }) +
+    return hero({ title: L("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
   function viewDept(id) {
     const d = dept(id);
     const chans = S().channels.filter((c) => c.dept === id);
-    const prodCount = S().products.filter((p) => chans.some((c) => c.id === p.channel)).length;
-    const published = S().pipeline.filter((w) => w.stage === "done" && chans.some((c) => c.id === w.channel)).length;
+    const ids = chans.map((c) => c.id);
+    const workCount = S().works.filter((w) => ids.includes(w.channel)).length;
+    const published = epCountIn(ids, (e) => e.stage === "published");
     const rows = chans.map((c) => {
-      const prods = S().products.filter((p) => p.channel === c.id).length;
-      const works = S().pipeline.filter((w) => w.channel === c.id).length;
-      const bits = [c.platform, c.kind === "shop" ? n(prods, "product") : null, n(works, "clip")].filter(Boolean).join(" · ");
+      const ws = worksOf(c.id);
+      const eps = epCountIn([c.id], () => true);
+      const bits = [platformShown(c, d), L("type_" + c.type), n(ws.length, "work"), n(eps, "ep")].filter(Boolean).join(" · ");
       return `
         <a class="row" href="#/channel/${esc(c.id)}">
           <span class="row-main"><span class="row-title">${esc(c.name)}</span><span class="row-sub">${esc(bits)}</span></span>
@@ -269,8 +316,8 @@
       titleLogo: id,
       title: d.name,
       lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
-      actions: btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
-      stats: [[chans.length, t("statChannels")], [prodCount, t("statProducts")], [published, t("statClipsPublished")]]
+      actions: btn(L("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
+      stats: [[chans.length, L("statChannels")], [workCount, L("statWorks")], [published, L("statClipsPublished")]]
     }) +
       band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} ${t("noChannelHint")}`, { gray: true }) + `
       <section class="band">
@@ -284,83 +331,102 @@
       </section>`;
   }
 
-  const photoImg = (p) => {
-    const src = imageSrc(p.image);
-    return src ? `<img src="${esc(src)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer" data-fallback>` : "";
-  };
+  function workTile(w) {
+    const { pub, total, eps } = progress(w);
+    const src = imageSrc(w.cover);
+    return `
+      <a class="tile" href="#/work/${esc(w.id)}">
+        <div class="stage">${imgTag(src, w.title) || `<span class="no-photo">${icon("photo")}${t("noPhoto")}</span>`}</div>
+        <div class="tile-body">
+          <div class="tile-name">${esc(w.title)}</div>
+          <div class="tile-meta"><span class="num">${eps.length ? t("progressOf", { a: pub, b: total }) : t("noEpsYet")}</span></div>
+        </div>
+      </a>`;
+  }
+
+  function factList(items) {
+    const rows = items.filter(Boolean);
+    return rows.length ? `<dl class="facts">${rows.map(([k, v]) => `<div class="fact"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>` : "";
+  }
 
   function viewChannel(id) {
     const c = channel(id), d = dept(c.dept);
-    const platformBit = c.platform && c.platform !== d.name ? `${esc(c.platform)}<span class="sep">·</span>` : "";
-    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}`.replace(/<span class="sep">·<\/span>$/, "") + (c.status && c.status !== "active" ? `<span class="sep">·</span><span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : "");
-    const editBtn = btn(t("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit");
-
-    if (c.kind === "shop") {
-      const prods = S().products.filter((p) => p.channel === id);
-      const loose = worksIn((w) => w.channel === id && !w.product);
-      const allClips = S().pipeline.filter((w) => w.channel === id);
-      const tiles = prods.map((p) => {
-        const clips = S().pipeline.filter((w) => w.product === p.id);
-        const live = clips.filter((w) => w.stage === "done").length;
-        return `
-          <a class="tile" href="#/product/${esc(p.id)}">
-            <div class="stage">${photoImg(p) || `<span class="no-photo">${icon("photo")}${t("noPhoto")}</span>`}</div>
-            <div class="tile-body">
-              <div class="tile-name">${esc(p.name)}</div>
-              <div class="tile-meta"><span class="num">${clips.length ? t("clipsOf", { a: live, b: n(clips.length, "clip") }) : t("noClipsYet")}</span><span class="status st-${esc(p.status)}">${stLabel(p.status)}</span></div>
-            </div>
-          </a>`;
-      }).join("");
-      return hero({
-        context, title: c.name, lede: c.note ? esc(c.note) : "",
-        actions: editBtn,
-        stats: [[prods.length, t("statProducts")], [allClips.filter((w) => w.stage === "done").length, t("statClipsPublished")], [allClips.filter((w) => w.stage === "doing").length, t("statInProgress")]]
-      }) + `
-        <section class="band gray">
-          <div class="inner wide">
-            <div class="sec-head"><h2>${t("secProducts")}</h2></div>
-            ${tiles ? `<div class="gallery">${tiles}</div>` : `<div class="list"><div class="empty">${t("noProductsHint")}</div></div>`}
-          </div>
-        </section>` +
-        (loose.length ? band(t("secOtherClips"), loose.map(workRow), "") : "");
-    }
-
-    const byStage = (s) => worksIn((w) => w.channel === id && w.stage === s);
+    const ws = worksOf(id);
+    const wIds = ws.map((w) => w.id);
+    const eps = S().episodes.filter((e) => wIds.includes(e.work));
+    const sep = '<span class="sep">·</span>';
+    const platform = platformShown(c, d);
+    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a>${sep}${platform ? esc(platform) + sep : ""}${esc(L("type_" + c.type))}` +
+      (c.status && c.status !== "active" ? `${sep}<span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : "");
+    const facts = factList([
+      c.audience ? [L("fAudience"), esc(c.audience)] : null,
+      c.schedule ? [L("fSchedule"), esc(c.schedule)] : null,
+      safeLink(c.url) ? [L("fPage"), `<a href="${esc(safeLink(c.url))}" target="_blank" rel="noopener">${esc(safeLink(c.url).replace(/^https?:\/\//, ""))}</a>`] : null
+    ]);
     return hero({
-      context, title: c.name, lede: c.note ? esc(c.note) : "",
-      actions: editBtn,
-      stats: [[byStage("doing").length, t("statInProgress")], [byStage("idea").length, t("statIdeas")], [byStage("done").length, t("statPublished")]]
-    }) +
-      band(t("secInProgress"), byStage("doing").map(workRow), t("emptyInProgress"), { gray: true }) +
-      band(t("secIdeas"), byStage("idea").map(workRow), t("emptyChannelIdeas")) +
-      band(t("secRecent"), byStage("done").map(workRow), t("emptyPublished"), { gray: true });
+      context, title: c.name, lede: c.concept ? esc(c.concept) : "",
+      actions: btn(L("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit"),
+      stats: [[ws.length, L("statWorks")], [eps.filter((e) => e.stage === "published").length, L("statClipsPublished")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("statInProgress")]]
+    }) + `
+      <section class="band gray">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${t("secWorks")}${ws.length ? ` <span class="count num">${ws.length}</span>` : ""}</h2></div>
+          ${ws.length ? `<div class="gallery">${ws.map(workTile).join("")}</div>` : `<div class="list"><div class="empty">${t("noWorksHint")}</div></div>`}
+        </div>
+      </section>` +
+      (facts ? `<section class="band"><div class="inner"><div class="sec-head"><h2>${t("chanFacts")}</h2></div>${facts}</div></section>` : "");
   }
 
-  function viewProduct(id) {
-    const p = product(id), c = channel(p.channel), d = dept(c.dept);
-    const clips = worksIn((w) => w.product === id);
-    const live = clips.filter((w) => w.stage === "done").length;
-    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">›</span><a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`;
-    const img = photoImg(p);
-    const stage = img
-      ? `<div class="product-stage">${img}</div>`
-      : `<button class="product-stage" type="button" data-edit-product="${esc(id)}"><span class="no-photo">${icon("photo")}${t("addPhoto")}</span></button>`;
-    const facts = [
-      [t("factChannel"), [c.name, c.platform && c.platform !== d.name ? c.platform : ""].filter(Boolean).map(esc).join(" · ")],
-      [t("factUpdated"), `<span class="num">${esc(fmtDate(p.updated))}</span>`],
-      p.note ? [t("factNote"), esc(p.note)] : null
-    ].filter(Boolean);
+  function viewWork(id) {
+    const w = work(id), c = channel(w.channel), d = dept(c.dept), T = typeOfWork(w);
+    const { eps, pub, total } = progress(w);
+    const sep = '<span class="sep">›</span>';
+    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a>${sep}<a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`;
+    const src = imageSrc(w.cover);
+    const stage = src
+      ? `<div class="product-stage">${imgTag(src, w.title)}</div>`
+      : `<button class="product-stage" type="button" data-edit-work="${esc(w.id)}"><span class="no-photo">${icon("photo")}${t("addPhoto")}</span></button>`;
 
-    const heroHtml = hero({
-      context, title: p.name,
-      actions: btn(t("editProduct"), `data-edit-product="${esc(id)}"`, "btn-outline", "edit"),
-      after: stage,
-      stats: [[live, t("statClipsDone")], [clips.length, t("statClipsTotal")], [`<span class="stat-text"><span class="status st-${esc(p.status)}">${stLabel(p.status)}</span></span>`, t("factStatus")]]
+    const detailRows = T.fields.map((k) => {
+      const v = String(w.props?.[k] ?? "").trim();
+      if (!v) return null;
+      const kind = FIELD_KIND[k];
+      const shown = kind === "link"
+        ? (safeLink(v) ? `<a href="${esc(safeLink(v))}" target="_blank" rel="noopener">${esc(safeLink(v).replace(/^https?:\/\//, ""))}</a>` : esc(v))
+        : kind === "datetime-local" ? esc(v.replace("T", " ")) : esc(v);
+      return [L("fld_" + k), shown];
     });
+    const details = factList([...detailRows, w.note ? [L("f_note"), esc(w.note)] : null, [L("e_work"), `<span class="num">${esc(fmtDate(w.updated))}</span>`]]);
+    const about = (w.summary ? `<p class="copy">${esc(w.summary)}</p>` : "") + details;
 
-    return heroHtml +
-      band(t("secClips"), clips.map(workRow), t("noClipsYet"), { gray: true }) + `
-      <section class="band"><div class="inner"><dl class="facts" style="margin:0">${facts.map(([k, v]) => `<div class="fact"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl></div></section>`;
+    const miniGrid = (items, kind) => `<div class="gallery mini-grid">${items.map((it, i) => `
+      <button class="tile mini" type="button" data-edit-${kind}="${esc(w.id)}|${i}">
+        <div class="stage ${kind === "loc" ? "wide" : ""}">${imgTag(imageSrc(it.image), it.name) || `<span class="no-photo">${icon("photo")}</span>`}</div>
+        <div class="tile-body">
+          <div class="tile-name">${esc(it.name)}</div>
+          ${kind === "char" ? `<div class="tile-meta"><span>${esc(L("role_" + (it.role || "other")))}</span></div>` : ""}
+          ${(kind === "char" ? it.look : it.desc) ? `<p class="tile-text">${esc(kind === "char" ? it.look : it.desc)}</p>` : ""}
+        </div>
+      </button>`).join("")}</div>`;
+    const listBand = (title, items, kind, hintKey, gray) => `
+      <section class="band${gray ? " gray" : ""}">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${title}${items.length ? ` <span class="count num">${items.length}</span>` : ""}</h2></div>
+          ${items.length ? miniGrid(items, kind) : `<div class="list"><div class="empty">${t(hintKey)}</div></div>`}
+        </div>
+      </section>`;
+
+    return hero({
+      context, title: w.title,
+      actions: btn(L("editWork"), `data-edit-work="${esc(w.id)}"`, "btn-outline", "edit"),
+      after: stage,
+      stats: [[`${pub}/${total}`, L("wStatPublished")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("wStatInProgress")], [eps.filter((e) => e.stage === "idea").length, L("wStatIdeas")]]
+    }) +
+      band(L("epp_" + T.noun), eps.map((e) => epRow(e, { showPath: false })), t("noEpsHint"), { gray: true }) +
+      `<section class="band"><div class="inner"><div class="sec-head"><h2>${t(T.lists.length || w.summary ? "secAbout" : "secDetails")}</h2></div>${about}</div></section>` +
+      (T.lists.includes("characters") ? listBand(t("secChars"), w.characters, "char", "noCharsHint", true) : "") +
+      (T.lists.includes("locations") ? listBand(t("secLocs"), w.locations, "loc", "noLocsHint", false) : "") +
+      (T.rules && w.rules ? `<section class="band gray"><div class="inner"><div class="sec-head"><h2>${t("secRulesWork")}</h2></div><p class="copy pre">${esc(w.rules)}</p></div></section>` : "");
   }
 
   function render() {
@@ -370,9 +436,9 @@
       r.view === "board" ? viewBoard() :
       r.view === "dept" ? viewDept(r.id) :
       r.view === "channel" ? viewChannel(r.id) :
-      r.view === "product" ? viewProduct(r.id) : viewNext());
+      r.view === "work" ? viewWork(r.id) : viewNext());
     main.querySelectorAll("img[data-fallback]").forEach((img) => img.addEventListener("error", () => {
-      img.replaceWith(Object.assign(document.createElement("span"), { className: "no-photo", textContent: window.BELL_I18N[lang].photoUnavailable }));
+      img.replaceWith(Object.assign(document.createElement("span"), { className: "no-photo", textContent: L("photoUnavailable") }));
     }, { once: true }));
     foot.innerHTML = `${t("foot", { ceo: S().ceo.name, date: fmtDate(S().updated) })} · ${store.hasLocalChanges() ? t("footLocal") : t("footPublished")}`;
     document.title = r.view === "next" ? "Bell Studio" : `${main.querySelector("h1")?.textContent} — Bell Studio`;
@@ -385,7 +451,7 @@
     closePopovers();
     openState = { onSave, onDelete, returnFocus: document.activeElement };
     inspector.innerHTML = `
-      <div class="insp-head"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-close aria-label="${t("close")}">${icon("close")}</button></div>
+      <div class="insp-head"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-close aria-label="${L("close")}">${icon("close")}</button></div>
       <form class="insp-body" id="insp-form" novalidate>${bodyHtml}</form>
       <div class="insp-foot">
         ${onDelete ? `<button class="btn btn-danger" type="button" data-delete>${deleteLabel || t("delete")}</button>` : ""}
@@ -411,20 +477,13 @@
     `<label class="field"><span class="label">${label}</span>${control}${hint ? `<span class="hint">${hint}</span>` : ""}</label>`;
   const input = (name, value, attrs = "") => `<input class="input" name="${name}" value="${esc(value)}" ${attrs}>`;
   const textarea = (name, value, attrs = "") => `<textarea class="textarea" name="${name}" ${attrs}>${esc(value)}</textarea>`;
+  const linkAttrs = 'type="url" inputmode="url" placeholder="https://…"';
+  const opt = (o, value) => `<option value="${esc(o.id)}"${o.id === value ? " selected" : ""}>${esc(o.label)}</option>`;
   const select = (name, options, value) =>
     `<select class="select" name="${name}">${options.map((o) => o.group
-      ? `<optgroup label="${esc(o.group)}">${o.items.map((i) => `<option value="${esc(i.id)}"${i.id === value ? " selected" : ""}>${esc(i.label)}</option>`).join("")}</optgroup>`
-      : `<option value="${esc(o.id)}"${o.id === value ? " selected" : ""}>${esc(o.label)}</option>`).join("")}</select>`;
-  const statusOptions = () => STATUSES.map((id) => ({ id, label: window.BELL_I18N[lang][`st_${id}`] }));
-
-  function channelOptions(filter = () => true) {
-    return S().departments.map((d) => ({
-      group: d.name,
-      items: S().channels.filter((c) => c.dept === d.id && filter(c)).map((c) => ({ id: c.id, label: c.name }))
-    })).filter((g) => g.items.length);
-  }
-  const productOptions = (chId) =>
-    [{ id: "", label: window.BELL_I18N[lang].f_none }].concat(S().products.filter((p) => p.channel === chId).map((p) => ({ id: p.id, label: p.name })));
+      ? `<optgroup label="${esc(o.group)}">${o.items.map((i) => opt(i, value)).join("")}</optgroup>`
+      : opt(o, value)).join("")}</select>`;
+  const setOptions = (el, options) => { el.innerHTML = options.map((o) => opt(o)).join(""); };
 
   function required(form, name, msgKey) {
     const el = form.elements[name];
@@ -438,133 +497,51 @@
   function commit(fn, msgKey) {
     const ok = store.mutate(fn);
     closeInspector();
-    say(window.BELL_I18N[lang][ok ? msgKey : "toastStorage"]);
+    say(L(ok ? msgKey : "toastStorage"));
   }
 
-  function editWork(index, preset = {}) {
-    const isNew = index == null;
-    const startCh = (preset.channel && channel(preset.channel)) || S().channels.find((c) => c.dept === preset.dept) || S().channels[0];
-    const w = isNew ? { title: "", channel: startCh?.id, product: preset.product || "", stage: "idea", note: "" } : S().pipeline[index];
-    const deptKey = channel(w.channel)?.dept;
-    const deptOptions = S().departments.filter((d) => S().channels.some((c) => c.dept === d.id)).map((d) => ({ id: d.id, label: d.name }));
-    const channelsOf = (dId) => S().channels.filter((c) => c.dept === dId).map((c) => ({ id: c.id, label: c.name }));
-    const stageSeg = `<div class="seg-field" role="radiogroup" aria-label="${t("f_status")}">${STAGES.map((s) =>
-      `<label><input type="radio" name="stage" value="${s}"${w.stage === s ? " checked" : ""}><span>${stLabel(s)}</span></label>`).join("")}</div>`;
-    const productField = (ch, val) => S().products.some((p) => p.channel === ch) ? fieldWrap(t("f_product"), select("product", productOptions(ch), val || "")) : "";
-    const body =
-      fieldWrap(t("f_dept"), select("dept", deptOptions, deptKey)) +
-      fieldWrap(t("f_channel"), select("channel", channelsOf(deptKey), w.channel)) +
-      `<div id="product-field">${productField(w.channel, w.product)}</div>` +
-      fieldWrap(t("f_title"), input("title", w.title, `required autocomplete="off" placeholder="${t("f_titlePh")}"`)) +
-      `<div class="field"><span class="label">${t("f_status")}</span>${stageSeg}</div>` +
-      fieldWrap(t("f_note"), textarea("note", w.note, `placeholder="${t("f_notePh")}"`));
-    openInspector(window.BELL_I18N[lang][isNew ? "newClip" : "editClip"], body, {
-      onSave(form) {
-        if (!required(form, "title", "errTitle")) return;
-        const data = {
-          title: form.elements.title.value.trim(),
-          channel: form.elements.channel.value,
-          product: form.elements.product?.value || undefined,
-          stage: form.querySelector('input[name="stage"]:checked')?.value || "idea",
-          note: form.elements.note.value.trim(),
-          updated: store.today()
-        };
-        if (!data.product) delete data.product;
-        commit((s) => { if (isNew) s.pipeline.push(data); else s.pipeline[index] = data; }, isNew ? "toastClipAdded" : "toastClipSaved");
-      },
-      onDelete: isNew ? null : () => commit((s) => s.pipeline.splice(index, 1), "toastClipDeleted")
-    });
-    const form = $("insp-form");
-    const syncProduct = () => { $("product-field").innerHTML = productField(form.elements.channel.value, ""); };
-    form.elements.dept.addEventListener("change", () => {
-      form.elements.channel.innerHTML = channelsOf(form.elements.dept.value).map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("");
-      syncProduct();
-    });
-    form.elements.channel.addEventListener("change", syncProduct);
-    // department, channel and product are usually already right (they come from the page), so start on the title
-    if (isNew) form.elements.title.focus();
-  }
-
-  function editProduct(id, channelId) {
-    const isNew = id == null;
-    const p = isNew ? { name: "", channel: channelId, status: "planned", image: "", note: "" } : product(id);
-    const body =
-      fieldWrap(t("f_name"), input("name", p.name, `required autocomplete="off" placeholder="${t("f_productPh")}"`)) +
-      fieldWrap(t("f_channel"), select("channel", channelOptions((c) => c.kind === "shop"), p.channel)) +
-      fieldWrap(t("f_status"), select("status", statusOptions(), p.status)) +
-      fieldWrap(t("f_photo"), input("image", p.image, 'type="url" inputmode="url" placeholder="https://drive.google.com/file/d/…"'), t("f_photoHint")) +
-      `<div class="thumb" id="thumb"></div>` +
-      fieldWrap(t("f_note"), textarea("note", p.note || ""));
-    const clipCount = isNew ? 0 : S().pipeline.filter((w) => w.product === id).length;
-    openInspector(window.BELL_I18N[lang][isNew ? "newProduct" : "editProduct"], body, {
-      onSave(form) {
-        if (!required(form, "name", "errName")) return;
-        const data = {
-          id: isNew ? slug(form.elements.name.value) : id,
-          channel: form.elements.channel.value,
-          name: form.elements.name.value.trim(),
-          status: form.elements.status.value,
-          image: form.elements.image.value.trim(),
-          note: form.elements.note.value.trim(),
-          updated: store.today()
-        };
-        commit((s) => {
-          if (isNew) s.products.push(data);
-          else {
-            Object.assign(s.products.find((x) => x.id === id), data);
-            s.pipeline.forEach((w) => { if (w.product === id) w.channel = data.channel; });
-          }
-        }, isNew ? "toastProductAdded" : "toastProductSaved");
-        if (isNew) go(`#/product/${data.id}`);
-      },
-      onDelete: isNew ? null : () => {
-        commit((s) => {
-          s.products = s.products.filter((x) => x.id !== id);
-          s.pipeline = s.pipeline.filter((w) => w.product !== id);
-        }, "toastProductDeleted");
-        go(`#/channel/${p.channel}`);
-      },
-      deleteLabel: clipCount ? t("deleteWith", { what: n(clipCount, "clip") }) : ""
-    });
-    const form = $("insp-form");
-    const preview = () => {
-      const src = imageSrc(form.elements.image.value);
-      const box = $("thumb");
-      box.innerHTML = src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer">` : t("f_preview");
-      box.querySelector("img")?.addEventListener("error", () => { box.textContent = window.BELL_I18N[lang].f_cantLoad; }, { once: true });
+  // image link field + live preview box
+  const imageField = (name, label, value, boxId) =>
+    fieldWrap(label, input(name, value, linkAttrs), L("f_photoHint")) + `<div class="thumb" id="${boxId}"></div>`;
+  function bindPreview(form, name, boxId) {
+    const el = form.elements[name], box = $(boxId);
+    if (!el || !box) return;
+    const show = () => {
+      const src = imageSrc(el.value);
+      box.innerHTML = src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer">` : esc(L("f_preview"));
+      box.querySelector("img")?.addEventListener("error", () => { box.textContent = L("f_cantLoad"); }, { once: true });
     };
-    form.elements.image.addEventListener("input", preview);
-    preview();
+    el.addEventListener("input", show);
+    show();
   }
 
-  function editChannel(id, deptId, presetDept) {
+  // ----- channel -----
+  function editChannel(id, presetDept) {
     const isNew = id == null;
-    const dId = deptId || presetDept || S().departments[0].id;
-    const platformsFor = (deptKey, current) => {
+    const startDept = presetDept || S().departments[0].id;
+    const c = isNew ? { name: "", dept: startDept, platform: "", type: defaultType(startDept), status: "active", concept: "", audience: "", schedule: "", url: "" } : channel(id);
+    const platformList = (deptKey, current) => {
       const d = dept(deptKey);
       const list = (d?.platforms?.length ? d.platforms : [d?.name]).filter(Boolean);
       if (current && !list.includes(current)) list.push(current);
       return list.map((p) => ({ id: p, label: p }));
     };
-    const c = isNew ? { name: "", dept: dId, platform: "", kind: dId === "shopee" ? "shop" : "content", status: "active", note: "" } : channel(id);
-    // Opened from a department: the department is already known, so it goes in the title instead of a field.
-    const fixedDept = isNew && deptId ? dept(deptId) : null;
-    // A new channel is simply active, so there is no status to pick. Everything with a good default stays folded away.
+    const typeOptions = TYPE_IDS.map((k) => ({ id: k, label: L("type_" + k) }));
     const more =
-      `<div class="field"><label class="check"><input type="checkbox" name="shop"${c.kind === "shop" ? " checked" : ""}>${t("f_shop")}</label><span class="hint">${t("f_shopHint")}</span></div>` +
-      fieldWrap(t("f_note"), textarea("note", c.note || ""));
+      fieldWrap(L("f_concept"), textarea("concept", c.concept || "")) +
+      fieldWrap(L("f_audience"), input("audience", c.audience || "", 'autocomplete="off"')) +
+      fieldWrap(L("f_schedule"), input("schedule", c.schedule || "", `autocomplete="off" placeholder="${esc(L("f_schedulePh"))}"`)) +
+      fieldWrap(L("f_page"), input("url", c.url || "", linkAttrs));
     const body =
-      fieldWrap(t("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${t("f_channelPh")}"`)) +
-      (fixedDept
-        ? `<input type="hidden" name="dept" value="${esc(fixedDept.id)}">`
-        : fieldWrap(t("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept))) +
-      fieldWrap(t("f_platform"), select("platform", platformsFor(c.dept, c.platform), c.platform || platformsFor(c.dept)[0]?.id)) +
+      fieldWrap(L("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${esc(L("f_channelPh"))}"`)) +
+      fieldWrap(L("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept)) +
+      fieldWrap(L("f_platform"), select("platform", platformList(c.dept, c.platform), c.platform || platformList(c.dept)[0]?.id)) +
+      fieldWrap(L("f_type"), select("type", typeOptions, c.type), `<span id="type-hint">${esc(L("typeHint_" + c.type))}</span>`) +
       `<details class="more"${isNew ? "" : " open"}><summary>${t("f_moreDetails")}</summary><div class="more-body">${more}</div></details>`;
-    const nProducts = isNew ? 0 : S().products.filter((p) => p.channel === id).length;
-    const nWorks = isNew ? 0 : S().pipeline.filter((w) => w.channel === id).length;
-    const cascade = [nProducts && n(nProducts, "product"), nWorks && n(nWorks, "clip")].filter(Boolean).join(" + ");
-    const title = window.BELL_I18N[lang][isNew ? "newChannel" : "editChannel"] + (fixedDept ? ` · ${fixedDept.name}` : "");
-    openInspector(title, body, {
+    const wsHere = isNew ? [] : worksOf(id);
+    const nEps = wsHere.reduce((sum, w) => sum + epsOf(w.id).length, 0);
+    const cascade = [wsHere.length && n(wsHere.length, "work"), nEps && n(nEps, "ep")].filter(Boolean).join(" + ");
+    openInspector(L(isNew ? "newChannel" : "editChannel"), body, {
       onSave(form) {
         if (!required(form, "name", "errName")) return;
         const data = {
@@ -572,43 +549,226 @@
           dept: form.elements.dept.value,
           name: form.elements.name.value.trim(),
           platform: form.elements.platform.value,
-          kind: form.elements.shop.checked ? "shop" : "content",
+          type: form.elements.type.value,
           status: isNew ? "active" : (channel(id)?.status || "active"),
-          note: form.elements.note.value.trim()
+          concept: form.elements.concept.value.trim(),
+          audience: form.elements.audience.value.trim(),
+          schedule: form.elements.schedule.value.trim(),
+          url: form.elements.url.value.trim()
         };
         commit((s) => { if (isNew) s.channels.push(data); else Object.assign(s.channels.find((x) => x.id === id), data); }, isNew ? "toastChannelAdded" : "toastChannelSaved");
         if (isNew) go(`#/channel/${data.id}`);
       },
       onDelete: isNew ? null : () => {
         commit((s) => {
+          const gone = s.works.filter((w) => w.channel === id).map((w) => w.id);
           s.channels = s.channels.filter((x) => x.id !== id);
-          s.products = s.products.filter((p) => p.channel !== id);
-          s.pipeline = s.pipeline.filter((w) => w.channel !== id);
+          s.works = s.works.filter((w) => w.channel !== id);
+          s.episodes = s.episodes.filter((e) => !gone.includes(e.work));
         }, "toastChannelDeleted");
         go(`#/dept/${c.dept}`);
       },
       deleteLabel: cascade ? t("deleteWith", { what: cascade }) : ""
     });
     const form = $("insp-form");
-    if (form.elements.dept.tagName === "SELECT") {
-      form.elements.dept.addEventListener("change", () => {
-        if (isNew) form.elements.shop.checked = form.elements.dept.value === "shopee";
-        form.elements.platform.innerHTML = platformsFor(form.elements.dept.value).map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("");
+    form.elements.dept.addEventListener("change", () => {
+      setOptions(form.elements.platform, platformList(form.elements.dept.value));
+      if (isNew) { form.elements.type.value = defaultType(form.elements.dept.value); form.elements.type.dispatchEvent(new Event("change")); }
+    });
+    form.elements.type.addEventListener("change", () => { $("type-hint").textContent = L("typeHint_" + form.elements.type.value); });
+  }
+
+  // ----- work -----
+  function editWork(id, preset = {}) {
+    const isNew = id == null;
+    const startCh = (preset.channel && channel(preset.channel)) || S().channels.find((c) => c.dept === preset.dept) || S().channels[0];
+    const w = isNew ? { channel: startCh?.id, title: "", summary: "", cover: "", props: {}, characters: [], locations: [], rules: "", note: "" } : work(id);
+    const deptKey = channel(w.channel)?.dept;
+    const deptOptions = S().departments.filter((d) => S().channels.some((c) => c.dept === d.id)).map((d) => ({ id: d.id, label: d.name }));
+    const channelsOf = (dId) => S().channels.filter((c) => c.dept === dId).map((c) => ({ id: c.id, label: c.name }));
+
+    const propInput = (k, v) => {
+      const kind = FIELD_KIND[k], label = L("fld_" + k);
+      if (kind === "textarea") return fieldWrap(label, textarea("p_" + k, v, 'style="min-height:72px"'));
+      const attrs = kind === "link" ? linkAttrs : kind === "number" ? 'type="number" min="1" inputmode="numeric"' : kind === "datetime-local" ? 'type="datetime-local"' : 'autocomplete="off"';
+      return fieldWrap(label, input("p_" + k, v, attrs));
+    };
+    const fieldsHtml = (chId, v) => {
+      const T = typeOfChannel(chId), aff = channel(chId)?.type === "affiliate";
+      return fieldWrap(L(aff ? "w_titleProduct" : "w_title"), input("title", v.title, `required autocomplete="off" placeholder="${esc(L("w_titlePh"))}"`)) +
+        fieldWrap(L(aff ? "w_summaryProduct" : "w_summary"), textarea("summary", v.summary)) +
+        imageField("cover", L(aff ? "w_coverProduct" : "w_cover"), v.cover, "thumb") +
+        T.fields.map((k) => propInput(k, v.props?.[k] ?? "")).join("") +
+        (T.rules ? fieldWrap(L("w_rules"), textarea("rules", v.rules), L("w_rulesHint")) : "") +
+        fieldWrap(L("f_note"), textarea("note", v.note, `placeholder="${esc(L("f_notePh"))}"`));
+    };
+    const readValues = (form) => {
+      const v = { props: {} };
+      ["title", "summary", "cover", "rules", "note"].forEach((k) => { v[k] = form.elements[k]?.value ?? ""; });
+      Object.keys(FIELD_KIND).concat(["category", "genre", "epLength", "style", "engine", "narrator", "duration"]).forEach((k) => {
+        if (form.elements["p_" + k]) v.props[k] = form.elements["p_" + k].value;
       });
+      return v;
+    };
+
+    const body =
+      fieldWrap(L("f_dept"), select("dept", deptOptions, deptKey)) +
+      fieldWrap(L("f_channel"), select("channel", channelsOf(deptKey), w.channel)) +
+      `<div class="more-body" id="work-fields">${fieldsHtml(w.channel, w)}</div>`;
+    const eps = isNew ? [] : epsOf(id);
+    openInspector(L(isNew ? "newWork" : "editWork"), body, {
+      onSave(form) {
+        if (!required(form, "title", "errTitle")) return;
+        const chId = form.elements.channel.value, T = typeOfChannel(chId);
+        const v = readValues(form);
+        const props = {};
+        T.fields.forEach((k) => { const val = String(v.props[k] ?? "").trim(); if (val) props[k] = val; });
+        const data = {
+          id: isNew ? slug(v.title) : id,
+          channel: chId,
+          title: v.title.trim(),
+          summary: v.summary.trim(),
+          cover: v.cover.trim(),
+          props,
+          rules: T.rules ? v.rules.trim() : (w.rules || ""),
+          note: v.note.trim(),
+          characters: w.characters || [],
+          locations: w.locations || [],
+          updated: store.today()
+        };
+        commit((s) => {
+          if (isNew) {
+            s.works.push(data);
+            // a product is always sold through at least one clip, so Affiliate works start with one
+            if (channel(chId)?.type === "affiliate") {
+              s.episodes.push({ id: `e-${store.rid()}`, work: data.id, n: 1, title: L("firstClip"), summary: "", stage: "idea", date: "", link: "", note: "", updated: store.today() });
+            }
+          } else {
+            s.works[s.works.findIndex((x) => x.id === id)] = data;
+          }
+        }, isNew ? "toastWorkAdded" : "toastWorkSaved");
+        if (isNew) go(`#/work/${data.id}`);
+      },
+      onDelete: isNew ? null : () => {
+        commit((s) => {
+          s.works = s.works.filter((x) => x.id !== id);
+          s.episodes = s.episodes.filter((e) => e.work !== id);
+        }, "toastWorkDeleted");
+        go(`#/channel/${w.channel}`);
+      },
+      deleteLabel: eps.length ? t("deleteWith", { what: n(eps.length, "ep") }) : ""
+    });
+    const form = $("insp-form");
+    const redraw = () => { bindPreview(form, "cover", "thumb"); };
+    form.elements.dept.addEventListener("change", () => {
+      setOptions(form.elements.channel, channelsOf(form.elements.dept.value));
+      form.elements.channel.dispatchEvent(new Event("change"));
+    });
+    form.elements.channel.addEventListener("change", () => {
+      const v = readValues(form);
+      $("work-fields").innerHTML = fieldsHtml(form.elements.channel.value, { ...w, ...v, props: { ...(w.props || {}), ...v.props } });
+      redraw();
+    });
+    redraw();
+    if (isNew) form.elements.title.focus();
+  }
+
+  // ----- episode / clip -----
+  function editEpisode(id, preset = {}) {
+    const isNew = id == null;
+    const startWork = work(preset.work) || S().works[0];
+    const e = isNew
+      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, title: "", summary: "", stage: "idea", date: "", link: "", note: "" }
+      : episode(id);
+    const workOptions = S().channels.map((c) => ({
+      group: `${dept(c.dept)?.name ?? ""} · ${c.name}`,
+      items: worksOf(c.id).map((w) => ({ id: w.id, label: w.title }))
+    })).filter((g) => g.items.length);
+    const stageSeg = `<div class="seg-field five" role="radiogroup" aria-label="${esc(L("e_status"))}">${STAGES.map((s) =>
+      `<label><input type="radio" name="stage" value="${s}"${e.stage === s ? " checked" : ""}><span>${stLabel(s)}</span></label>`).join("")}</div>`;
+    const body =
+      fieldWrap(L("e_work"), select("work", workOptions, e.work)) +
+      fieldWrap(L("e_number"), input("n", e.n, 'type="number" min="1" inputmode="numeric"')) +
+      fieldWrap(L("e_title"), input("title", e.title, 'autocomplete="off"')) +
+      fieldWrap(L("e_summary"), textarea("summary", e.summary, 'style="min-height:72px"')) +
+      `<div class="field"><span class="label">${L("e_status")}</span>${stageSeg}</div>` +
+      fieldWrap(L("e_date"), input("date", e.date, 'type="date"')) +
+      fieldWrap(L("e_link"), input("link", e.link, linkAttrs), esc(L("e_linkHint")) + (safeLink(e.link) ? ` <a href="${esc(safeLink(e.link))}" target="_blank" rel="noopener">${esc(L("openPost"))}</a>` : "")) +
+      fieldWrap(L("f_note"), textarea("note", e.note, `placeholder="${esc(L("f_notePh"))}"`));
+    const T0 = typeOfWork(work(e.work));
+    openInspector(L((isNew ? "newEp_" : "editEp_") + T0.noun), body, {
+      onSave(f) {
+        const data = {
+          id: isNew ? `e-${store.rid()}` : id,
+          work: f.elements.work.value,
+          n: Math.max(1, parseInt(f.elements.n.value, 10) || 1),
+          title: f.elements.title.value.trim(),
+          summary: f.elements.summary.value.trim(),
+          stage: f.querySelector('input[name="stage"]:checked')?.value || "idea",
+          date: f.elements.date.value,
+          link: f.elements.link.value.trim(),
+          note: f.elements.note.value.trim(),
+          updated: store.today()
+        };
+        commit((s) => { if (isNew) s.episodes.push(data); else s.episodes[s.episodes.findIndex((x) => x.id === id)] = data; }, isNew ? "toastEpAdded" : "toastEpSaved");
+      },
+      onDelete: isNew ? null : () => commit((s) => { s.episodes = s.episodes.filter((x) => x.id !== id); }, "toastEpDeleted")
+    });
+    const form = $("insp-form");
+    if (isNew) {
+      form.elements.work.addEventListener("change", () => { form.elements.n.value = epsOf(form.elements.work.value).length + 1; });
+      form.elements.title.focus();
     }
   }
 
+  // ----- characters and locations (stored inside the work) -----
+  function editListItem(kind, workId, idx) {
+    const wk = work(workId);
+    const isNew = idx == null;
+    const isChar = kind === "char";
+    const key = isChar ? "characters" : "locations";
+    const item = isNew ? (isChar ? { name: "", role: "main", look: "", personality: "", voice: "", image: "" } : { name: "", desc: "", image: "" }) : wk[key][idx];
+    const body = isChar
+      ? fieldWrap(L("c_name"), input("name", item.name, 'required autocomplete="off"')) +
+        fieldWrap(L("c_role"), select("role", ROLES.map((r) => ({ id: r, label: L("role_" + r) })), item.role || "main")) +
+        fieldWrap(L("c_look"), textarea("look", item.look || "", 'style="min-height:72px"')) +
+        fieldWrap(L("c_personality"), textarea("personality", item.personality || "", 'style="min-height:72px"')) +
+        fieldWrap(L("c_voice"), input("voice", item.voice || "", 'autocomplete="off"')) +
+        imageField("image", L("c_image"), item.image, "thumb")
+      : fieldWrap(L("l_name"), input("name", item.name, 'required autocomplete="off"')) +
+        fieldWrap(L("l_desc"), textarea("desc", item.desc || "")) +
+        imageField("image", L("l_image"), item.image, "thumb");
+    const title = `${L(isNew ? (isChar ? "newChar" : "newLoc") : (isChar ? "editChar" : "editLoc"))} · ${wk.title}`;
+    const msg = (what) => `toast${isChar ? "Char" : "Loc"}${what}`;
+    openInspector(title, body, {
+      onSave(f) {
+        if (!required(f, "name", "errName")) return;
+        const data = isChar
+          ? { name: f.elements.name.value.trim(), role: f.elements.role.value, look: f.elements.look.value.trim(), personality: f.elements.personality.value.trim(), voice: f.elements.voice.value.trim(), image: f.elements.image.value.trim() }
+          : { name: f.elements.name.value.trim(), desc: f.elements.desc.value.trim(), image: f.elements.image.value.trim() };
+        commit((s) => {
+          const target = s.works.find((x) => x.id === workId);
+          if (isNew) target[key].push(data); else target[key][idx] = data;
+          target.updated = store.today();
+        }, msg(isNew ? "Added" : "Saved"));
+      },
+      onDelete: isNew ? null : () => commit((s) => { s.works.find((x) => x.id === workId)[key].splice(idx, 1); }, msg("Deleted"))
+    });
+    bindPreview($("insp-form"), "image", "thumb");
+  }
+
+  // ----- department -----
   function editDept(id) {
     const d = dept(id);
     const body =
-      fieldWrap(t("f_head"), input("head", d.head.name, 'required autocomplete="off"')) +
-      fieldWrap(t("f_persona"), input("persona", d.head.persona, 'autocomplete="off"')) +
-      fieldWrap(t("f_mission"), textarea("mission", d.mission)) +
-      fieldWrap(t("f_platforms"), textarea("platforms", (d.platforms || []).join("\n"), 'style="min-height:72px"'), t("f_platformsHint")) +
-      fieldWrap(t("f_team"), textarea("roles", d.roles.map((r) => `${r.title} — ${r.duty}`).join("\n")), t("f_teamHint")) +
-      fieldWrap(t("f_rules"), textarea("rules", d.rules.join("\n")), t("f_rulesHint")) +
-      fieldWrap(t("f_skills"), textarea("skills", d.skills.join("\n"), 'style="min-height:80px"'), t("f_skillsHint"));
-    openInspector(window.BELL_I18N[lang].editDeptTitle.replace("{name}", d.name), body, {
+      fieldWrap(L("f_head"), input("head", d.head.name, 'required autocomplete="off"')) +
+      fieldWrap(L("f_persona"), input("persona", d.head.persona, 'autocomplete="off"')) +
+      fieldWrap(L("f_mission"), textarea("mission", d.mission)) +
+      fieldWrap(L("f_platforms"), textarea("platforms", (d.platforms || []).join("\n"), 'style="min-height:72px"'), L("f_platformsHint")) +
+      fieldWrap(L("f_team"), textarea("roles", d.roles.map((r) => `${r.title} — ${r.duty}`).join("\n")), L("f_teamHint")) +
+      fieldWrap(L("f_rules"), textarea("rules", d.rules.join("\n")), L("f_rulesHint")) +
+      fieldWrap(L("f_skills"), textarea("skills", d.skills.join("\n"), 'style="min-height:80px"'), L("f_skillsHint"));
+    openInspector(L("editDeptTitle").replace("{name}", d.name), body, {
       onSave(form) {
         if (!required(form, "head", "errHead")) return;
         const lines = (k) => form.elements[k].value.split("\n").map((x) => x.trim()).filter(Boolean);
@@ -649,7 +809,7 @@
     if ("lang" in ds) return setLang(ds.lang);
     if ("close" in ds) return closeInspector();
     if ("delete" in ds) {
-      if (!el.classList.contains("armed")) { el.classList.add("armed"); el.textContent = window.BELL_I18N[lang].confirmDelete; return; }
+      if (!el.classList.contains("armed")) { el.classList.add("armed"); el.textContent = L("confirmDelete"); return; }
       return openState?.onDelete?.();
     }
     if ("export" in ds) {
@@ -657,20 +817,25 @@
       const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `bell-studio-${store.today()}.json` });
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      return say(window.BELL_I18N[lang].toastExported);
+      return say(L("toastExported"));
     }
     if ("reset" in ds) {
-      if (!el.classList.contains("armed")) { el.classList.add("armed"); el.textContent = window.BELL_I18N[lang].discard; return; }
+      if (!el.classList.contains("armed")) { el.classList.add("armed"); el.textContent = L("discard"); return; }
       store.reset();
-      return say(window.BELL_I18N[lang].toastReset);
+      return say(L("toastReset"));
     }
     if ("boardFilter" in ds) { try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
-    if ("editWork" in ds) return editWork(+ds.editWork);
-    if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined, product: ds.product || undefined });
-    if ("editProduct" in ds) return editProduct(ds.editProduct);
-    if ("newProduct" in ds) return editProduct(null, ds.newProduct);
+
+    if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined });
+    if ("editWork" in ds) return editWork(ds.editWork);
+    if ("newEp" in ds) return editEpisode(null, { work: ds.newEp });
+    if ("editEp" in ds) return editEpisode(ds.editEp);
+    if ("newChar" in ds) return editListItem("char", ds.newChar, null);
+    if ("editChar" in ds) { const [wid, i] = ds.editChar.split("|"); return editListItem("char", wid, +i); }
+    if ("newLoc" in ds) return editListItem("loc", ds.newLoc, null);
+    if ("editLoc" in ds) { const [wid, i] = ds.editLoc.split("|"); return editListItem("loc", wid, +i); }
+    if ("newChannel" in ds) { e.preventDefault(); return editChannel(null, ds.dept || undefined); }
     if ("editChannel" in ds) return editChannel(ds.editChannel);
-    if ("newChannel" in ds) { e.preventDefault(); return editChannel(null, ds.newChannel || undefined, ds.dept || undefined); }
     if ("editDept" in ds) return editDept(ds.editDept);
   });
 
