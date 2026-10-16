@@ -10,11 +10,14 @@
 //   formats          = ตัวอย่างรูปแบบคลิป (template กลุ่ม) ต่อประเภทช่อง ขึ้นเป็นตัวเลือกในช่อง "รูปแบบ" ของตอน พิมพ์เองได้ และที่เคยใช้แล้วจะขึ้นให้เลือกซ้ำ
 //   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · format = รูปแบบ/template ที่ใช้เป็นชื่อของตอน · title = ชื่อเรียกเพิ่ม (ไม่บังคับ) · stage = idea | script | producing | editing | published
 //   รูป/ลิงก์ (cover, image, link) = ลิงก์แชร์ Google Drive หรือ URL https — เว้นว่างได้
+// ต้นทุนและผลลัพธ์ของตอน (v1.0): length (วินาที) · engine (เครื่องมือที่ใช้ทำ) · cost (บาท ตัวเลขล้วน) · stats {views likes comments shares saves orders} · statsAt (วันที่เก็บตัวเลข)
+//   ⚠️ ข้อมูลกลุ่มนี้เป็นของส่วนตัว: กรอกบนเว็บเก็บในเบราว์เซอร์ของ Ize เท่านั้น Bell ห้ามเขียนลง data.js ที่ push ขึ้นเว็บสาธารณะ (ไม่มีรายได้/ค่าคอมในโครงสร้างนี้)
 // platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
 // status ของช่อง: "active" = ใช้งานอยู่ (ค่าตั้งต้น) · "paused" = พัก
 
 window.STUDIO = {
   v: 2,
+  version: "1.0",
   updated: "2026-10-16",
   company: {
     name: "Bell Studio",

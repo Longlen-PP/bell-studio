@@ -74,6 +74,11 @@ window.BELL_I18N = {
 
     e_work: "Work", e_number: "Number", e_format: "Format", e_formatHint: "Pick one or type your own. It becomes the name of this clip in every list.", e_title: "Extra name (optional)", e_summary: "Summary", e_status: "Stage",
     e_date: "Publish date", e_link: "Post link", e_linkHint: "Public post link only. Never a personal affiliate link.",
+    secClips: "Published clips", secFormats: "By format", kpiSpend: "Total spend", kpiClips: "Published", kpiAvgCost: "Cost per published clip", kpiViews: "Total views",
+    tClip: "Clip", tProduct: "Product / story", tPosted: "Posted", tLength: "Length", tCost: "Cost", tViews: "Views", tOrders: "Orders", tFormat: "Format", tClips: "Clips", tAvgCost: "Avg cost", tAvgViews: "Avg views", tTotal: "Total", tNoFormat: "No format yet",
+    noClipsYet: "Nothing is published here yet. Add cost and results to a clip and they show up in this table.", privNote: "Costs and results you enter stay private. They are not published to the website.",
+    secProd: "Production and results", e_length: "Length (seconds)", e_engine: "Made with", e_cost: "Cost (฿)", e_costHint: "Credits or fees spent on this clip, in baht.", e_statsAt: "Results as of", e_resultsHint: "Fill in whatever you have. Empty stays empty.",
+    s_views: "Views", s_likes: "Likes", s_comments: "Comments", s_shares: "Shares", s_saves: "Saves", s_orders: "Orders",
     firstClip: "First clip",
     showMore: "Show {n} more", showLess: "Show less",
     f_code: "Code", f_codeHint: "2-5 letters or digits, used in every code under this channel. Changing it renames them all.", errCode: "Use 2-5 letters or digits that no other channel in this department uses.",
@@ -174,6 +179,11 @@ window.BELL_I18N = {
 
     e_work: "งาน", e_number: "ลำดับที่", e_format: "รูปแบบ", e_formatHint: "เลือกหรือพิมพ์เองได้ ใช้เป็นชื่อของตอนนี้ในทุกรายการ", e_title: "ชื่อเรียกเพิ่ม (ไม่บังคับ)", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
     e_date: "วันที่ลง", e_link: "ลิงก์โพสต์", e_linkHint: "ใส่เฉพาะลิงก์โพสต์สาธารณะ ห้ามใส่ลิงก์ affiliate ส่วนตัว",
+    secClips: "คลิปที่ลงแล้ว", secFormats: "แยกตามรูปแบบ", kpiSpend: "ต้นทุนรวม", kpiClips: "ลงแล้ว", kpiAvgCost: "ต้นทุนต่อคลิปที่ลง", kpiViews: "ยอดชมรวม",
+    tClip: "คลิป", tProduct: "สินค้า / เรื่อง", tPosted: "วันที่ลง", tLength: "ความยาว", tCost: "ต้นทุน", tViews: "ยอดชม", tOrders: "ออเดอร์", tFormat: "รูปแบบ", tClips: "คลิป", tAvgCost: "ต้นทุนเฉลี่ย", tAvgViews: "ชมเฉลี่ย", tTotal: "รวม", tNoFormat: "ยังไม่ระบุรูปแบบ",
+    noClipsYet: "ยังไม่มีคลิปที่ลงแล้วที่นี่ ใส่ต้นทุนและผลลัพธ์ในคลิป แล้วจะขึ้นในตารางนี้", privNote: "ต้นทุนและผลลัพธ์ที่กรอกเป็นข้อมูลส่วนตัว ไม่ถูกเผยแพร่ขึ้นเว็บไซต์",
+    secProd: "ต้นทุนและผลลัพธ์", e_length: "ความยาว (วินาที)", e_engine: "ทำด้วยเครื่องมือ", e_cost: "ต้นทุน (บาท)", e_costHint: "เครดิตหรือค่าใช้จ่ายที่ใช้กับคลิปนี้ เป็นบาท", e_statsAt: "ผลลัพธ์ ณ วันที่", e_resultsHint: "กรอกเท่าที่มี ช่องว่างปล่อยว่างได้",
+    s_views: "ยอดชม", s_likes: "ถูกใจ", s_comments: "คอมเมนต์", s_shares: "แชร์", s_saves: "บันทึก", s_orders: "ออเดอร์",
     firstClip: "คลิปแรก",
     showMore: "ดูอีก {n} ใบ", showLess: "ย่อ",
     f_code: "รหัสช่อง", f_codeHint: "ตัวอักษรหรือตัวเลข 2-5 ตัว ใช้เป็นส่วนหนึ่งของรหัสทุกอันในช่องนี้ ถ้าแก้ รหัสทั้งหมดจะเปลี่ยนตาม", errCode: "ใช้ตัวอักษรหรือตัวเลข 2-5 ตัว และต้องไม่ซ้ำกับช่องอื่นในแผนกเดียวกัน",

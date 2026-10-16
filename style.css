@@ -238,6 +238,26 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 }
 @media (prefers-reduced-motion: reduce) { .map-link, .map-orb::before, .map-live::before { animation: none; } .map-node:hover { transform: none; } }
 
+/* cost and results tables (v1.0) */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.kpi { padding: 20px 22px; border-radius: 22px; background: var(--gray); }
+.band.gray .kpi { background: var(--pane); }
+.kpi-num { font-size: clamp(26px, 3.4vw, 38px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi-label { margin-top: 6px; font-size: 14px; color: var(--ink-2); }
+.tbl { overflow-x: auto; border-radius: 22px; background: var(--gray); }
+.band.gray .tbl { background: var(--pane); }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tbl th { padding: 14px 18px; text-align: left; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.tbl td { padding: 14px 18px; border-top: 1px solid var(--fill-strong); vertical-align: top; }
+.tbl .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl td .sub { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-2); }
+.tbl tr.total td { font-weight: 600; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.priv { margin-top: 16px; font-size: 13px; color: var(--ink-3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 980px) { .kpis { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .three { grid-template-columns: 1fr 1fr; } .tbl th, .tbl td { padding: 12px 12px; } }
+
 .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 .sec-head h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
 html[lang="th"] .sec-head h2 { letter-spacing: -0.005em; line-height: 1.3; }

@@ -398,6 +398,68 @@
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
+  // ---------- cost and results (v1.0): tables for a set of episodes ----------
+  const STAT_KEYS = ["views", "likes", "comments", "shares", "saves", "orders"];
+  const numOf = (v) => (v === "" || v == null || isNaN(+v) ? null : +v);
+  const nf = () => new Intl.NumberFormat(lang === "th" ? "th-TH" : "en-US", { maximumFractionDigits: 0 });
+  const showNum = (v) => (v == null ? "—" : nf().format(v));
+  const showBaht = (v) => (v == null ? "—" : "฿" + nf().format(v));
+  const sumOf = (list, pick) => list.reduce((a, e) => a + (numOf(pick(e)) || 0), 0);
+  const countOf = (list, pick) => list.filter((e) => numOf(pick(e)) != null).length;
+  const avgOf = (list, pick) => { const k = countOf(list, pick); return k ? sumOf(list, pick) / k : null; };
+  function perfBands(eps) {
+    const pubs = eps.filter((e) => e.stage === "published").sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated)));
+    const spend = countOf(eps, (e) => e.cost) ? sumOf(eps, (e) => e.cost) : null;
+    const views = countOf(pubs, (e) => e.stats?.views) ? sumOf(pubs, (e) => e.stats?.views) : null;
+    const costPub = avgOf(pubs, (e) => e.cost);
+    const tile = (v, label) => `<div class="kpi"><div class="kpi-num">${v}</div><div class="kpi-label">${label}</div></div>`;
+    const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(pubs.length), L("kpiClips"))}${tile(showBaht(costPub), L("kpiAvgCost"))}${tile(showNum(views), L("kpiViews"))}</div>`;
+    const head = (cols) => `<thead><tr>${cols.map(([k, num]) => `<th${num ? ' class="n"' : ""}>${L(k)}</th>`).join("")}</tr></thead>`;
+    const clipRows = pubs.map((e) => {
+      const w = work(e.work);
+      return `<tr>
+        <td><button class="link" type="button" data-edit-ep="${esc(e.id)}">${esc(epCode(e))}</button><span class="sub">${esc(e.format || L("tNoFormat"))}${e.title ? " — " + esc(e.title) : ""}</span></td>
+        <td>${esc(w.title)}</td>
+        <td class="num">${e.date ? esc(fmtDate(e.date)) : "—"}</td>
+        <td class="n">${numOf(e.length) != null ? showNum(+e.length) + "s" : "—"}</td>
+        <td class="n">${showBaht(numOf(e.cost))}</td>
+        <td class="n">${showNum(numOf(e.stats?.views))}</td>
+        <td class="n">${showNum(numOf(e.stats?.orders))}</td>
+      </tr>`;
+    }).join("");
+    const totalRow = pubs.length ? `<tr class="total"><td>${L("tTotal")}</td><td></td><td></td><td></td>
+        <td class="n">${showBaht(countOf(pubs, (e) => e.cost) ? sumOf(pubs, (e) => e.cost) : null)}</td>
+        <td class="n">${showNum(views)}</td>
+        <td class="n">${showNum(countOf(pubs, (e) => e.stats?.orders) ? sumOf(pubs, (e) => e.stats?.orders) : null)}</td></tr>` : "";
+    const clipsTable = pubs.length
+      ? `<div class="tbl"><table>${head([["tClip"], ["tProduct"], ["tPosted"], ["tLength", 1], ["tCost", 1], ["tViews", 1], ["tOrders", 1]])}<tbody>${clipRows}${totalRow}</tbody></table></div>`
+      : `<div class="list"><div class="empty">${L("noClipsYet")}</div></div>`;
+    const first = `
+      <section class="band">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${L("secClips")}${pubs.length ? ` <span class="count num">${pubs.length}</span>` : ""}</h2></div>
+          ${kpis}
+          ${clipsTable}
+          <p class="priv">${L("privNote")}</p>
+        </div>
+      </section>`;
+    // group the published clips by format so the kinds of clip can be compared
+    const groups = {};
+    pubs.forEach((e) => { (groups[e.format || ""] = groups[e.format || ""] || []).push(e); });
+    const fmtRows = Object.keys(groups).map((k) => {
+      const g = groups[k];
+      return `<tr><td>${esc(k || L("tNoFormat"))}</td><td class="n">${showNum(g.length)}</td><td class="n">${showBaht(avgOf(g, (e) => e.cost))}</td><td class="n">${showNum(avgOf(g, (e) => e.stats?.views))}</td><td class="n">${showNum(countOf(g, (e) => e.stats?.orders) ? sumOf(g, (e) => e.stats?.orders) : null)}</td></tr>`;
+    }).join("");
+    const second = pubs.length ? `
+      <section class="band gray">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${L("secFormats")}</h2></div>
+          <div class="tbl"><table>${head([["tFormat"], ["tClips", 1], ["tAvgCost", 1], ["tAvgViews", 1], ["tOrders", 1]])}<tbody>${fmtRows}</tbody></table></div>
+        </div>
+      </section>` : "";
+    return first + second;
+  }
+
   function viewDept(id) {
     const d = dept(id);
     const chans = S().channels.filter((c) => c.dept === id);
@@ -422,6 +484,7 @@
       actions: btn(L("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
       stats: flowStrip(deptEps, id, `${n(chans.length, "channel")} · ${n(workCount, "work")}`)
     }) +
+      perfBands(deptEps) +
       band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} ${t("noChannelHint")}`, { gray: true }) + `
       <section class="band">
         <div class="inner">
@@ -543,7 +606,7 @@
     main.querySelectorAll("img[data-fallback]").forEach((img) => img.addEventListener("error", () => {
       img.replaceWith(Object.assign(document.createElement("span"), { className: "no-photo", textContent: L("photoUnavailable") }));
     }, { once: true }));
-    foot.innerHTML = `${t("foot", { ceo: S().ceo.name, date: fmtDate(S().updated) })} · ${store.hasLocalChanges() ? t("footLocal") : t("footPublished")}`;
+    foot.innerHTML = `${t("foot", { ceo: S().ceo.name, date: fmtDate(S().updated) })} · ${store.hasLocalChanges() ? t("footLocal") : t("footPublished")} · v${esc(window.STUDIO.version || "1.0")}`;
     document.title = r.view === "next" ? "Bell Studio" : `${main.querySelector("h1")?.textContent} — Bell Studio`;
   }
 
@@ -803,7 +866,7 @@
     const isNew = id == null;
     const startWork = work(preset.work) || S().works[0];
     const e = isNew
-      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, format: "", title: "", summary: "", stage: "idea", date: "", link: "", note: "" }
+      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, format: "", title: "", length: "", engine: "", cost: "", stats: {}, statsAt: "", summary: "", stage: "idea", date: "", link: "", note: "" }
       : episode(id);
     const workOptions = S().channels.map((c) => ({
       group: `${dept(c.dept)?.name ?? ""} · ${c.name}`,
@@ -820,6 +883,12 @@
       `<div class="field"><span class="label">${L("e_status")}</span>${stageSeg}</div>` +
       fieldWrap(L("e_date"), input("date", e.date, 'type="date"')) +
       fieldWrap(L("e_link"), input("link", e.link, linkAttrs), esc(L("e_linkHint")) + (safeLink(e.link) ? ` <a href="${esc(safeLink(e.link))}" target="_blank" rel="noopener">${esc(L("openPost"))}</a>` : "")) +
+      `<details class="more"${e.cost || e.length || e.engine || Object.keys(e.stats || {}).length ? " open" : ""}><summary>${L("secProd")}</summary><div class="more-body">` +
+        `<div class="two">${fieldWrap(L("e_length"), input("dur", e.length ?? "", 'type="number" min="0" inputmode="numeric"'))}${fieldWrap(L("e_cost"), input("cost", e.cost ?? "", 'type="number" min="0" step="any" inputmode="decimal"'), esc(L("e_costHint")))}</div>` +
+        fieldWrap(L("e_engine"), input("engine", e.engine || "", 'autocomplete="off"')) +
+        `<div class="three">${STAT_KEYS.map((k) => fieldWrap(L("s_" + k), input("s_" + k, e.stats?.[k] ?? "", 'type="number" min="0" inputmode="numeric"'))).join("")}</div>` +
+        fieldWrap(L("e_statsAt"), input("statsAt", e.statsAt || "", 'type="date"'), esc(L("e_resultsHint"))) +
+      `</div></details>` +
       fieldWrap(L("f_note"), textarea("note", e.note, `placeholder="${esc(L("f_notePh"))}"`));
     const T0 = typeOfWork(work(e.work));
     openInspector(L((isNew ? "newEp_" : "editEp_") + T0.noun), body, {
@@ -830,6 +899,11 @@
           n: Math.max(1, parseInt(f.elements.n.value, 10) || 1),
           format: f.elements.format.value.trim(),
           title: f.elements.title.value.trim(),
+          length: f.elements.dur.value.trim(),
+          engine: f.elements.engine.value.trim(),
+          cost: f.elements.cost.value.trim(),
+          stats: Object.fromEntries(STAT_KEYS.map((k) => [k, f.elements["s_" + k].value.trim()]).filter(([, v]) => v !== "")),
+          statsAt: f.elements.statsAt.value,
           summary: f.elements.summary.value.trim(),
           stage: f.querySelector('input[name="stage"]:checked')?.value || "idea",
           date: f.elements.date.value,
