@@ -279,22 +279,36 @@
     const ideas = all.filter((e) => e.stage === "idea");
     const published = all.filter((e) => e.stage === "published");
     const recent = published.slice().sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated))).slice(0, 5);
-    const deptCards = S().departments.map((d) => {
+    // company map: Bell in the middle, one node per department, links glow when that department has work moving
+    const SLOTS = [[17, 21], [83, 21], [17, 79], [83, 79]];
+    const nodes = S().departments.map((d, i) => {
+      const [x, y] = SLOTS[i % SLOTS.length];
       const ids = S().channels.filter((c) => c.dept === d.id).map((c) => c.id);
       const eps = S().episodes.filter((e) => ids.includes(work(e.work)?.channel));
       const works = S().works.filter((w) => ids.includes(w.channel)).length;
-      const bar = eps.length ? STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("") : "";
-      const line = ids.length
-        ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: eps.filter((e) => e.stage === "published").length })].join(" · ")
-        : "";
-      return `
-        <a class="dept-card" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
-          <span class="dept-card-top">${deptIcon(d.id)}<span class="dept-card-name">${esc(d.name)}</span></span>
-          <span class="dept-card-head">${esc(d.head.name)}</span>
+      const doingN = eps.filter((e) => IN_PROGRESS.includes(e.stage)).length;
+      const pubN = eps.filter((e) => e.stage === "published").length;
+      const bar = STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("");
+      const sx = x < 50 ? -1 : 1, nx = x * 10, ny = y * 5.6, ex = nx - sx * 130, mid = (500 + ex) / 2;
+      const state = !ids.length ? "idle" : doingN ? "busy" : "live";
+      const link = `<path id="lk-${esc(d.id)}" class="map-link ${state}" d="M500 280 C ${mid} 280, ${mid} ${ny}, ${ex} ${ny}" style="--c: var(--d-${esc(d.id)})"/>`;
+      const spark = doingN ? `<circle r="5" class="map-spark" style="--c: var(--d-${esc(d.id)})"><animateMotion dur="${(3 + i * 0.4).toFixed(1)}s" repeatCount="indefinite"><mpath href="#lk-${esc(d.id)}"/></animateMotion></circle>` : "";
+      const line = ids.length ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: pubN })].join(" · ") : "";
+      const html = `
+        <a class="map-node ${state}" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)}); left: ${x}%; top: ${y}%">
+          <span class="map-node-top">${deptIcon(d.id)}<span class="map-node-name">${esc(d.name)}</span>${doingN ? `<span class="map-live">${t("mapLive", { n: doingN })}</span>` : ""}</span>
+          <span class="map-node-head">${esc(d.head.name)}</span>
           <span class="flow-bar mini" aria-hidden="true">${bar}</span>
-          ${ids.length ? `<span class="dept-card-line">${line}</span>` : `<span class="dept-card-cta">${L("dcSetup")}${icon("chev", "icon chev")}</span>`}
+          ${ids.length ? `<span class="map-node-line">${line}</span>` : `<span class="map-node-cta">${L("dcSetup")}${icon("chev", "icon chev")}</span>`}
         </a>`;
-    }).join("");
+      return { link, spark, html };
+    });
+    const deptCards = `
+      <div class="map">
+        <svg class="map-svg" viewBox="0 0 1000 560" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.spark).join("")}</svg>
+        <div class="map-core" aria-hidden="true"><span class="map-ring"></span><span class="logo-mark"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")}</span></div>
+        ${nodes.map((x) => x.html).join("")}
+      </div>`;
     const nextRows = doing.concat(ideas).map((e) => epRow(e));
 
     return hero({
@@ -305,7 +319,7 @@
       <section class="band gray">
         <div class="inner wide">
           <div class="sec-head"><h2>${L("departments")}</h2></div>
-          <div class="dept-grid">${deptCards}</div>
+          ${deptCards}
         </div>
       </section>` +
       (nextRows.length ? band(t("secNextUp"), nextRows, "") : "") +
