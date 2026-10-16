@@ -205,6 +205,55 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 .dept-card-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
 .dept-card-cta .chev { width: 13px; height: 13px; color: var(--ink-3); }
 
+/* company map in the home hero: light and quiet, moving only where work is */
+.map { position: relative; margin: 0 auto; max-width: 940px; aspect-ratio: 1000 / 520; text-align: left;
+  background:
+    radial-gradient(closest-side at 17% 22%, color-mix(in srgb, var(--d-facebook) 11%, transparent), transparent),
+    radial-gradient(closest-side at 83% 22%, color-mix(in srgb, var(--d-youtube) 10%, transparent), transparent),
+    radial-gradient(closest-side at 17% 78%, color-mix(in srgb, var(--d-tiktok) 11%, transparent), transparent),
+    radial-gradient(closest-side at 83% 78%, color-mix(in srgb, var(--d-shopee) 12%, transparent), transparent); }
+.map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map-link { fill: none; stroke: var(--hairline); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.map-link.live, .map-link.busy { stroke: var(--c); stroke-width: 2; stroke-dasharray: 3 8; animation: map-flow 1.6s linear infinite; }
+.map-link.busy { stroke-width: 2.5; stroke-dasharray: 8 8; animation-duration: 1s; }
+@keyframes map-flow { to { stroke-dashoffset: -22; } }
+.map-dot { fill: var(--c); filter: drop-shadow(0 0 5px var(--c)); }
+.map-core { position: absolute; left: 50%; top: 50%; width: 138px; height: 138px; translate: -50% -50%; display: grid; place-items: center; align-content: center; gap: 6px; border-radius: 50%; background: var(--white); border: 1px solid var(--hairline); box-shadow: var(--shadow-md); }
+.map-core .logo-mark { width: 30px; height: 44px; }
+.map-core-label { font-size: 12px; letter-spacing: .08em; color: var(--ink-2); }
+.map-ring { position: absolute; inset: -8px; border-radius: 50%; background: conic-gradient(var(--d-facebook), var(--d-tiktok), var(--d-shopee), var(--d-youtube), var(--d-facebook));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); animation: map-spin 12s linear infinite; }
+.map-pulse { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ink-3); opacity: 0; animation: map-radar 4.8s ease-out infinite; }
+.map-pulse.late { animation-delay: 2.4s; }
+@keyframes map-spin { to { transform: rotate(360deg); } }
+@keyframes map-radar { 0% { transform: scale(1); opacity: .45; } 100% { transform: scale(2.1); opacity: 0; } }
+.map-node { position: absolute; width: 26%; translate: -50% -50%; display: grid; gap: 7px; padding: 16px 18px; border-radius: 20px; color: var(--ink); text-decoration: none; background: var(--white); border: 1px solid color-mix(in srgb, var(--c) 40%, var(--hairline)); box-shadow: 0 6px 24px color-mix(in srgb, var(--c) 14%, transparent); transition: transform 300ms var(--ease), box-shadow 300ms var(--ease); }
+.map-node:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 14px 36px color-mix(in srgb, var(--c) 28%, transparent); }
+.map-node.idle { border-color: var(--hairline); box-shadow: none; }
+.map-node.idle .brand-icon { opacity: .55; }
+.map-node-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.map-node-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.map-node .brand-icon { width: 22px; height: 22px; }
+.map-node-head { margin-top: -3px; font-size: 13px; color: var(--ink-2); }
+.map-node .flow-bar.mini { height: 5px; }
+.map-node-line { font-size: 13px; color: var(--ink-2); text-wrap: balance; }
+.map-node-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; }
+.map-node-cta .chev { width: 11px; height: 11px; color: var(--ink-3); }
+.map-live { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--ink); background: color-mix(in srgb, var(--c) 16%, transparent); }
+.map-live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); animation: map-blink 1.4s ease-in-out infinite; }
+@keyframes map-blink { 50% { opacity: .25; transform: scale(.7); } }
+.map-legend { display: flex; justify-content: center; gap: 22px; margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+.map-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.map-legend i { width: 8px; height: 8px; border-radius: 50%; }
+@media (max-width: 899px) {
+  .map { aspect-ratio: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 4px; }
+  .map-svg { display: none; }
+  .map-core { grid-column: 1 / -1; position: relative; left: auto; top: auto; translate: none; justify-self: center; margin: 14px 0 18px; }
+  .map-node { position: relative; left: auto !important; top: auto !important; translate: none; width: auto; padding: 14px; }
+  .map-node-line { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .map-link, .map-ring, .map-pulse, .map-live::before { animation: none; } .map-pulse { display: none; } .map-node:hover { transform: none; } }
+
 .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 .sec-head h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
 html[lang="th"] .sec-head h2 { letter-spacing: -0.005em; line-height: 1.3; }

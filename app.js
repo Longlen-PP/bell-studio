@@ -269,6 +269,43 @@
     src ? `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" referrerpolicy="no-referrer" data-fallback>` : "";
 
   // ---------- views ----------
+  // ---------- company map: Bell in the middle, one node per department ----------
+  // dots leave Bell toward a department for each episode in progress and come back green for each one published
+  function companyMap() {
+    const SLOTS = [[17, 22], [83, 22], [17, 78], [83, 78]];
+    const nodes = S().departments.map((d, i) => {
+      const [x, y] = SLOTS[i % SLOTS.length];
+      const ids = S().channels.filter((c) => c.dept === d.id).map((c) => c.id);
+      const eps = S().episodes.filter((e) => ids.includes(work(e.work)?.channel));
+      const works = S().works.filter((w) => ids.includes(w.channel)).length;
+      const doingN = eps.filter((e) => IN_PROGRESS.includes(e.stage)).length;
+      const pubN = eps.filter((e) => e.stage === "published").length;
+      const bar = STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("");
+      const sx = x < 50 ? -1 : 1, ny = y * 5.2, ex = x * 10 - sx * 130, mid = (500 + ex) / 2;
+      const state = !ids.length ? "idle" : doingN ? "busy" : "live";
+      const id = `lk-${esc(d.id)}`;
+      const link = `<path id="${id}" class="map-link ${state}" d="M500 260 C ${mid} 260, ${mid} ${ny}, ${ex} ${ny}" style="--c: var(--d-${esc(d.id)})"/>`;
+      const dot = (k, back) => `<circle r="${back ? 5 : 4.5}" class="map-dot${back ? " back" : ""}" style="--c: ${back ? "var(--st-published)" : `var(--d-${esc(d.id)})`}"><animateMotion dur="3.6s" begin="${(k * 1.2 + (back ? 0.6 : 0)).toFixed(1)}s" repeatCount="indefinite"${back ? ' keyPoints="1;0" keyTimes="0;1" calcMode="linear"' : ""}><mpath href="#${id}"/></animateMotion></circle>`;
+      const dots = Array.from({ length: Math.min(doingN, 3) }, (_, k) => dot(k, false)).concat(Array.from({ length: Math.min(pubN, 3) }, (_, k) => dot(k, true))).join("");
+      const line = ids.length ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: pubN })].join(" · ") : "";
+      const html = `
+        <a class="map-node ${state}" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)}); left: ${x}%; top: ${y}%">
+          <span class="map-node-top">${deptIcon(d.id)}<span class="map-node-name">${esc(d.name)}</span>${doingN ? `<span class="map-live">${t("mapLive", { n: doingN })}</span>` : ""}</span>
+          <span class="map-node-head">${esc(d.head.name)}</span>
+          <span class="flow-bar mini" aria-hidden="true">${bar}</span>
+          ${ids.length ? `<span class="map-node-line">${line}</span>` : `<span class="map-node-cta">${L("dcSetup")}${icon("chev", "icon chev")}</span>`}
+        </a>`;
+      return { link, dots, html };
+    });
+    return `
+      <div class="map" role="group" aria-label="${esc(S().company.name)}">
+        <svg class="map-svg" viewBox="0 0 1000 520" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.dots).join("")}</svg>
+        <div class="map-core"><span class="map-pulse"></span><span class="map-pulse late"></span><span class="map-ring"></span><span class="logo-mark" role="img" aria-label="${esc(S().ceo?.name || "Bell")}"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></div>
+        ${nodes.map((x) => x.html).join("")}
+      </div>
+      <p class="map-legend" aria-hidden="true"><span><i style="background: var(--ink)"></i>${L("mapOut")}</span><span><i style="background: var(--st-published)"></i>${L("mapIn")}</span></p>`;
+  }
+
   function viewNext() {
     const all = S().episodes;
     const doing = all.filter((e) => IN_PROGRESS.includes(e.stage));
@@ -294,9 +331,9 @@
     const nextRows = doing.concat(ideas).map((e) => epRow(e));
 
     return hero({
-      logo: true,
       hideTitle: true,
       title: L("upNext"),
+      after: companyMap(),
       stats: flowStrip(all, "all")
     }) + `
       <section class="band gray">
