@@ -291,7 +291,6 @@
     return hero({
       logo: true,
       title: L("upNext"),
-      lede: t("nextLede", { doing: doing.length, ideas: ideas.length, channels: n(S().channels.length, "channel") }),
       stats: flowStrip(all, "all")
     }) +
       band(t("secInProgress"), doing.map((e) => epRow(e)), t("emptyInProgress"), { gray: true }) +
