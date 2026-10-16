@@ -155,11 +155,6 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
 .context .sep { color: var(--ink-3); font-weight: 400; }
 .hero h1 { font-size: clamp(44px, 6.4vw, 80px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; overflow-wrap: anywhere; text-wrap: balance; }
 html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
-/* Overview title: ink with a slow sweep of the four platform colors */
-.hero h1.fx { color: transparent; background: linear-gradient(100deg, var(--ink) 0%, var(--ink) 41%, var(--d-facebook) 45%, var(--d-tiktok) 48.5%, var(--d-shopee) 52%, var(--d-youtube) 55.5%, var(--ink) 59%, var(--ink) 100%) 0 0 / 420% 100%;
-  -webkit-background-clip: text; background-clip: text; animation: title-sweep 9s ease-in-out infinite; }
-@keyframes title-sweep { 0%, 15% { background-position: 100% 0; } 85%, 100% { background-position: 0 0; } }
-@media (prefers-reduced-motion: reduce) { .hero h1.fx { animation: none; background-position: 100% 0; } }
 .lede { margin: 22px auto 0; max-width: 720px; font-size: 21px; line-height: 1.45; color: var(--ink-2); text-wrap: balance; }
 .lede strong, .copy strong { color: var(--ink); font-weight: 600; }
 .hero-actions { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
@@ -176,13 +171,22 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 .flow-facts { margin-bottom: 22px; font-size: 17px; color: var(--ink-2); }
 .flow-bar { display: flex; gap: 4px; height: 10px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--hairline) 60%, transparent); }
 .flow-bar i { display: block; min-width: 12px; background: var(--sc); }
-.flow-stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
-.flow-stage { display: grid; gap: 10px; justify-items: center; padding: 16px 6px; border: 0; border-radius: 18px; background: none; color: var(--ink); font: inherit; cursor: pointer; }
-.flow-stage:hover { background: color-mix(in srgb, var(--sc) 12%, transparent); }
-.flow-num { font-size: clamp(40px, 5.5vw, 64px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.flow-stages { display: flex; align-items: flex-start; justify-content: center; margin-top: 8px; }
+.flow-stage { flex: none; display: grid; gap: 14px; justify-items: center; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; cursor: pointer; }
+.flow-node { position: relative; display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; border: 3px solid var(--sc); background: color-mix(in srgb, var(--sc) 14%, var(--white)); transition: transform 300ms var(--ease), box-shadow 300ms var(--ease); }
+.flow-stage:hover .flow-node { transform: scale(1.08); box-shadow: 0 8px 28px color-mix(in srgb, var(--sc) 35%, transparent); }
+.flow-num { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.flow-stage.zero .flow-node { border-color: var(--hairline); background: none; }
 .flow-stage.zero .flow-num { color: var(--ink-3); font-weight: 600; }
-.flow-label { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; color: var(--ink-2); }
-.flow-label .dot { background: var(--sc); }
+.flow-stage.st-published:not(.zero) .flow-node { background: var(--sc); }
+.flow-stage.st-published:not(.zero) .flow-num { color: #fff; }
+.flow-stage.active .flow-node::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--sc); animation: flow-pulse 2.4s ease-out infinite; }
+@keyframes flow-pulse { from { transform: scale(1); opacity: .6; } to { transform: scale(1.45); opacity: 0; } }
+.flow-label { white-space: nowrap; font-size: 16px; color: var(--ink-2); }
+.flow-link { flex: 1 1 0; min-width: 18px; max-width: 120px; height: 3px; margin-top: 44px; border-radius: 3px; background: var(--hairline); position: relative; overflow: hidden; }
+.flow-link.moving { background: color-mix(in srgb, var(--ink) 22%, transparent); }
+.flow-link.moving::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, var(--ink), transparent); animation: flow-run 1.8s ease-in-out infinite; }
+@keyframes flow-run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 .flow-next { margin-top: 20px; font-size: 17px; color: var(--ink-2); text-wrap: balance; }
 .flow-next strong { color: var(--ink); font-weight: 600; }
 .flow-at { color: var(--ink-3); }
@@ -391,9 +395,12 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
   .stats { gap: 12px; margin-top: 44px; }
   .stat-label { font-size: 14px; }
   .flow { margin-top: 40px; }
-  .flow-stages { gap: 2px; }
-  .flow-label { flex-direction: column; gap: 4px; font-size: 12px; }
-  .flow-num { font-size: 34px; }
+  .flow-node { width: 52px; height: 52px; border-width: 2px; }
+  .flow-num { font-size: 22px; }
+  .flow-label { font-size: 12px; }
+  .flow-link { margin-top: 26px; min-width: 8px; }
+  .flow-stage { gap: 10px; width: 52px; }
+  .flow-label { margin: 0 -14px; }
   .cols { grid-template-columns: 1fr; gap: 32px; }
   .row { padding: 18px 20px; }
   .row + .row::before { left: 20px; right: 20px; }
@@ -407,5 +414,7 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
   .hero-actions .btn { flex: 1 1 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .flow-stage.active .flow-node::after, .flow-link.moving::after { animation: none; }
+  .flow-link.moving::after { width: 100%; opacity: .3; }
   *, *::before, *::after { transition-duration: 1ms !important; }
 }

@@ -193,7 +193,7 @@
       <button type="button" data-export>${t("export")}</button><button type="button" data-reset>${t("reset")}</button></span></div>`;
   }
 
-  function hero({ logo = false, titleFx = false, titleLogo = "", context = "", title, lede = "", actions = "", stats = null, after = "" }) {
+  function hero({ logo = false, titleLogo = "", context = "", title, lede = "", actions = "", stats = null, after = "" }) {
     return `
       <section class="band hero">
         <div class="inner">
@@ -201,7 +201,7 @@
           ${context ? `<div class="context">${context}</div>` : ""}
           ${titleLogo && BRAND_ICONS.includes(titleLogo)
             ? `<h1 class="logo-title"><span class="brand-icon big bi-${esc(titleLogo)}" aria-hidden="true"></span><span class="visually-hidden">${esc(title)}</span></h1>`
-            : `<h1${titleFx ? ' class="fx"' : ""}>${esc(title)}</h1>`}
+            : `<h1>${esc(title)}</h1>`}
           ${lede ? `<p class="lede">${lede}</p>` : ""}
           ${actions ? `<div class="hero-actions">${actions}</div>` : ""}
           ${after}
@@ -219,14 +219,11 @@
   function flowStrip(eps, scope, facts = "") {
     const counts = STAGES.map((s) => eps.filter((e) => e.stage === s).length);
     const total = eps.length, pub = counts[STAGES.length - 1];
-    const bar = total
-      ? STAGES.map((s, i) => counts[i] ? `<i class="st-${s}" style="flex:${counts[i]}"></i>` : "").join("")
-      : "";
     const cells = STAGES.map((s, i) => `
-      <button class="flow-stage st-${s}${counts[i] ? "" : " zero"}" type="button" data-flow-stage="${s}" data-flow-scope="${esc(scope)}" title="${esc(t("flowOpen", { stage: stLabel(s) }))}">
-        <span class="flow-num">${counts[i]}</span>
-        <span class="flow-label"><span class="dot"></span>${stLabel(s)}</span>
-      </button>`).join("");
+      <button class="flow-stage st-${s}${counts[i] ? "" : " zero"}${IN_PROGRESS.includes(s) && counts[i] ? " active" : ""}" type="button" data-flow-stage="${s}" data-flow-scope="${esc(scope)}" title="${esc(t("flowOpen", { stage: stLabel(s) }))}">
+        <span class="flow-node"><span class="flow-num">${counts[i]}</span></span>
+        <span class="flow-label">${stLabel(s)}</span>
+      </button>${i < STAGES.length - 1 ? `<span class="flow-link${counts[i] ? " moving" : ""}" aria-hidden="true"></span>` : ""}`).join("");
     const open = eps.filter((e) => e.stage !== "published");
     let next;
     if (!total) next = L("flowEmpty");
@@ -239,7 +236,6 @@
     return `
       <div class="flow" role="group" aria-label="${esc(L("flowAria"))}">
         ${facts ? `<p class="flow-facts">${facts}</p>` : ""}
-        <div class="flow-bar" aria-hidden="true">${bar}</div>
         <div class="flow-stages">${cells}</div>
         <p class="flow-next">${next}</p>
       </div>`;
@@ -299,7 +295,6 @@
 
     return hero({
       logo: true,
-      titleFx: true,
       title: L("upNext"),
       stats: flowStrip(all, "all")
     }) + `
