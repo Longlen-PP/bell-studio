@@ -249,7 +249,7 @@
     const open = eps.filter((e) => e.stage !== "published");
     let next;
     if (!total) next = L("flowEmpty");
-    else if (!open.length) next = "";
+    else if (!open.length) next = t("flowPub", { pub, total });
     else {
       const lead = open.slice().sort((a, b) => STAGES.indexOf(b.stage) - STAGES.indexOf(a.stage)
         || String(a.updated || "").localeCompare(String(b.updated || "")))[0];
