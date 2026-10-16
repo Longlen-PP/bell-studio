@@ -241,14 +241,33 @@
       </div>`;
   }
 
+  // A list row for one episode/clip. In lists that mix works (home) it reads like a label:
+  // product or story as the title, "Clip 1 · name" under it, then where it lives and what kind it is.
   function epRow(e, { showPath = true } = {}) {
     const w = work(e.work);
     const T = typeOfWork(w);
-    const sub = showPath ? esc(pathOf(w)) : esc(e.summary || "");
+    let main, sub, tags = "";
+    if (showPath) {
+      const c = channel(w.channel), d = dept(c.dept);
+      const kind = String(L("type_" + c.type) || "");
+      const flavor = String(w.props?.category || w.props?.genre || "").trim();
+      const pills = [
+        `<span class="tag">${deptIcon(d.id)}${esc(d.name)}</span>`,
+        `<span class="tag">${esc(c.name)}</span>`,
+        kind && kind.toLowerCase() !== String(c.name).toLowerCase() ? `<span class="tag">${esc(kind)}</span>` : "",
+        flavor ? `<span class="tag">${esc(flavor)}</span>` : ""
+      ].filter(Boolean).join("");
+      main = esc(w.title);
+      sub = esc(epName(T, e));
+      tags = `<span class="row-tags">${pills}</span>`;
+    } else {
+      main = esc(epName(T, e));
+      sub = esc(e.summary || "");
+    }
     return `
       <button class="row" type="button" data-edit-ep="${esc(e.id)}">
         <span class="status st-${esc(e.stage)}"><span class="visually-hidden">${stLabel(e.stage)}</span></span>
-        <span class="row-main"><span class="row-title">${esc(epName(T, e))}</span>${sub ? `<span class="row-sub">${sub}</span>` : ""}</span>
+        <span class="row-main"><span class="row-title">${main}</span>${sub ? `<span class="row-sub">${sub}</span>` : ""}${tags}</span>
         <span class="status-text">${stLabel(e.stage)}</span>
         <span class="row-meta num">${esc(fmtDate(e.date || e.updated))}</span>
         ${icon("chev", "icon chev")}
