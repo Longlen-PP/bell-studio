@@ -408,6 +408,32 @@
     if (goalInfo && noDate) out.push(t("fNoDate", { n: noDate }));
     return out.length ? out : [L("fNone")];
   }
+  // market-trend infographic: ranked category chips per platform (shared ones glow) and four quick "what works" cards
+  function trendsHtml(filter) {
+    const tr = (window.STUDIO_NEWS || {}).trends;
+    if (!tr || !(filter === "all" || (tr.depts || []).includes(filter))) return "";
+    const rows = tr.categories || [];
+    const shared = new Set((rows[0]?.items || []).map((x) => x.k).filter((k) => rows.every((r) => r.items.some((x) => x.k === k))));
+    const rowHtml = rows.map((r) => `
+      <div class="cat-row">
+        <div class="cat-plat">${esc(r.platform)}<a href="${esc(r.url)}" target="_blank" rel="noopener" title="${esc(r.note)}">${L("trendSource")}</a></div>
+        <div class="cat-chips">${r.items.map((x, k) => `<span class="cat-chip${shared.has(x.k) ? " shared" : ""}"><b class="num">${k + 1}</b>${esc(x.t)}</span>`).join("")}</div>
+      </div>`).join("");
+    const fmt = (tr.formats || []).map((f) => `
+      <a class="fmt-card" href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.src)}">
+        <b>${esc(f.big)}</b><span>${esc(f.t)}</span><i>${esc(L(f.trust === "official" ? "trustOfficial" : "trustSecondary"))}</i>
+      </a>`).join("");
+    return `<section class="trends">
+      <h3>${L("trendHead")} <small>${t("trendWhen", { date: (window.STUDIO_NEWS || {}).updated || "-" })}</small></h3>
+      <p class="trend-sub">${L("trendCats")} <span class="shared-key"><i></i>${L("trendShared")}</span></p>
+      ${rowHtml}
+      ${tr.catNote ? `<p class="muted">${esc(tr.catNote)}</p>` : ""}
+      <p class="trend-sub">${L("trendFormats")}</p>
+      <div class="fmt-grid">${fmt}</div>
+      ${tr.caveat ? `<p class="muted">${esc(tr.caveat)}</p>` : ""}
+    </section>`;
+  }
+
   function homeStats(items, filter) {
     const pubs = items.filter((e) => e.stage === "published");
     const spend = countOf(items, (e) => e.cost) ? sumOf(items, (e) => e.cost) : null;
@@ -453,6 +479,7 @@
           <p class="news-meta"><span class="tag">${esc(L(n.trust === "official" ? "trustOfficial" : "trustSecondary"))}</span>${n.date ? `<span>${esc(n.date)}</span>` : ""}<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.source)} · ${L("readSource")}</a></p>
         </article>`).join("") : `<p class="muted">${L("newsEmpty")}</p>`;
       panel = `<div class="findings">
+        ${trendsHtml(filter)}
         <div class="find-col"><h3>${L("findHead")}</h3><ul class="find-list">${list}</ul><p class="muted">${L("findExport")}</p></div>
         <div class="find-col"><h3>${L("findNewsHead")}</h3><p class="muted">${t("findNewsNote", { date: news.updated || "-" })}</p>${newsHtml}</div>
       </div>`;

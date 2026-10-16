@@ -4,6 +4,31 @@
 // dept: "facebook" | "youtube" | "tiktok" | "shopee" | "all"
 window.STUDIO_NEWS = {
   updated: "2026-10-17",
+  // เทรนด์ตลาด: ข้อมูลสาธารณะที่ Bell ค้นมา เป็นแค่ทิศทาง ไม่ใช่ยอดขายจริง (ยอดจริงรายสินค้าอยู่หลังล็อกอินหรือในเครื่องมือเสียเงิน)
+  // trends.depts = แผนกที่แสดงส่วนนี้ (ดู All ก็แสดง) · categories[].items[].k = รหัสหมวด ถ้าตรงกันทุกแพลตฟอร์มจะถูกไฮไลต์ว่าตรงกัน
+  trends: {
+    depts: ["shopee", "tiktok"],
+    categories: [
+      {
+        platform: "TikTok Shop ไทย", note: "ประมาณการโดย EchoTik สัปดาห์ 3-9 ส.ค. 2026", trust: "secondary",
+        url: "https://www.echotik.live/blog/tiktok-shop-weekly-report-august-3-9-2026/",
+        items: [{ k: "food", t: "อาหาร/เครื่องดื่ม" }, { k: "health", t: "สุขภาพ" }, { k: "beauty", t: "ความงาม" }, { k: "home", t: "ของใช้ในบ้าน" }, { k: "furniture", t: "เฟอร์นิเจอร์" }, { k: "electronics", t: "อิเล็กทรอนิกส์" }]
+      },
+      {
+        platform: "Shopee ไทย", note: "ยอดใช้จ่ายของลูกค้าบัตร KTC ม.ค.-มิ.ย. 2026", trust: "secondary",
+        url: "https://www.ktc.co.th/en/news/product-and-service/online-shopping-daily-life",
+        items: [{ k: "home", t: "ของใช้ในบ้าน" }, { k: "beauty", t: "ความงาม" }, { k: "appliances", t: "เครื่องใช้ไฟฟ้า" }, { k: "health", t: "สุขภาพ" }, { k: "food", t: "อาหารแห้ง/เครื่องดื่ม" }]
+      }
+    ],
+    catNote: "ของใช้สัตว์เลี้ยงไม่อยู่ในรายการต้น ๆ ของทั้งสองแหล่ง แต่รายการนี้นับแบบกว้าง ไม่ได้แปลว่าขายไม่ได้",
+    formats: [
+      { big: "2 วิแรก", t: "โชว์สินค้าหรือปัญหาให้เห็นทันที", trust: "secondary", src: "Mavely", url: "https://www.joinmavely.com/blog/how-to-do-affiliate-marketing-tiktok/" },
+      { big: "UGC", t: "สไตล์คนใช้จริง ชนะคลิปที่แบรนด์ทำเอง", trust: "secondary", src: "Mavely", url: "https://www.joinmavely.com/blog/how-to-do-affiliate-marketing-tiktok/" },
+      { big: "12-18 วิ", t: "ความยาวที่ผู้ขายเครื่องมือแนะนำ ควรลองเทียบเอง", trust: "secondary", src: "EchoTik", url: "https://www.echotik.live/blog/tiktok-short-video-viral-strategies/" },
+      { big: "คลิป > ไลฟ์", t: "ในสหรัฐฯ คลิปปักตะกร้าสร้างยอดราว 70% ไลฟ์ราว 17%", trust: "secondary", src: "Hubfluence", url: "https://www.hubfluence.io/blog/tiktok-shop-content-formats" }
+    ],
+    caveat: "ข้อมูลฟรีบอกได้แค่ทิศทาง ไม่มีสูตรรับประกันไวรัล ให้ใช้ผลของเราเอง (เทียบรูปแบบคลิป) เป็นตัวตัดสิน"
+  },
   items: [
     {
       dept: "facebook", date: "2026-03", trust: "official",
