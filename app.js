@@ -105,8 +105,23 @@
       <div class="menu-group" style="--c: var(--d-${esc(d.id)})">
         <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
         ${S().channels.filter((c) => c.dept === d.id).map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}
-      </div>`).join("") + `
-      <div class="menu-group"><button class="menu-link add" type="button" data-new-channel="">${icon("plus")}${t("newChannel")}</button></div>`;
+      </div>`).join("");
+
+    // The page you are on decides what the forms start with.
+    const ctx = (() => {
+      if (r.view === "dept") return { dept: r.id };
+      if (r.view === "channel") return { dept: channel(r.id).dept, channel: r.id };
+      if (r.view === "product") { const c = channel(product(r.id).channel); return { dept: c.dept, channel: c.id, product: r.id }; }
+      return {};
+    })();
+    const shopCh = (ctx.channel && channel(ctx.channel)?.kind === "shop" ? channel(ctx.channel) : S().channels.find((c) => c.kind === "shop"));
+    const newMenu = `
+      <div class="menu-group">
+        ${S().channels.length ? `<button class="menu-link" type="button" data-new-work="${esc(ctx.channel || "")}" data-product="${esc(ctx.product || "")}" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${t("newClip")}</button>` : ""}
+        ${shopCh ? `<button class="menu-link" type="button" data-new-product="${esc(shopCh.id)}">${icon("plus")}${t("newProduct")}</button>` : ""}
+        <button class="menu-link" type="button" data-new-channel="" data-dept="${esc(ctx.dept || "")}">${icon("plus")}${t("newChannel")}</button>
+      </div>`;
+
     nav.innerHTML = `
       <nav class="pillbar" aria-label="Main">
         <a class="brand" href="#/next"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
@@ -122,6 +137,10 @@
           <div class="lang" role="group" aria-label="${t("langLabel")}">
             <button type="button" data-lang="th" aria-pressed="${lang === "th"}">TH</button>
             <button type="button" data-lang="en" aria-pressed="${lang === "en"}">EN</button>
+          </div>
+          <div style="position:relative">
+            <button class="btn btn-sm" type="button" data-pop="new" aria-expanded="false" aria-controls="pop-new">${icon("plus")}${t("new")}</button>
+            <div class="popover" id="pop-new" hidden style="right:0">${newMenu}</div>
           </div>
           <button class="icon-btn menu-toggle" type="button" data-menu aria-label="${t("menu")}" aria-expanded="false" aria-controls="nav-links">${icon("menu")}</button>
         </div>
@@ -198,11 +217,10 @@
       logo: true,
       title: t("upNext"),
       lede: t("nextLede", { doing: n(doing.length, "clip"), ideas: n(ideas.length, "idea"), channels: n(S().channels.length, "channel") }),
-      actions: hasCh ? btn(t("newIdea"), 'data-new-work=""') : btn(t("newChannel"), 'data-new-channel=""'),
       stats: [[doing.length, t("statInProgress")], [ideas.length, t("statIdeas")], [doneAll.length, t("statPublished")]]
     }) +
       band(t("secInProgress"), doing.map(workRow), t("emptyInProgress"), { gray: true }) +
-      band(t("secIdeas"), ideas.map(workRow), hasCh ? `${t("emptyIdeas")} <button class="btn-link" type="button" data-new-work="">${t("addIdea")}</button>` : t("emptyNoChannels")) +
+      band(t("secIdeas"), ideas.map(workRow), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
       (lonely.length ? band(t("secNeedsChannel"), lonelyRows, "", { gray: true }) : "") +
       band(t("secRecent"), done.map(workRow), t("emptyPublished"), { gray: !lonely.length });
   }
@@ -227,7 +245,7 @@
             </button>`).join("") : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
-    return hero({ title: t("board"), lede: t("boardLede"), actions: S().channels.length ? btn(t("newIdea"), 'data-new-work=""') : "", after: `<div class="chips" role="group" aria-label="${t("departments")}">${chips}</div>` }) +
+    return hero({ title: t("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${t("departments")}">${chips}</div>` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
@@ -295,13 +313,13 @@
       }).join("");
       return hero({
         context, title: c.name, lede: c.note ? esc(c.note) : "",
-        actions: btn(t("newProduct"), `data-new-product="${esc(id)}"`) + editBtn,
+        actions: editBtn,
         stats: [[prods.length, t("statProducts")], [allClips.filter((w) => w.stage === "done").length, t("statClipsPublished")], [allClips.filter((w) => w.stage === "doing").length, t("statInProgress")]]
       }) + `
         <section class="band gray">
           <div class="inner wide">
             <div class="sec-head"><h2>${t("secProducts")}</h2></div>
-            <div class="gallery">${tiles}<button class="tile tile-new" type="button" data-new-product="${esc(id)}">${icon("plus")}${t("newProduct")}</button></div>
+            ${tiles ? `<div class="gallery">${tiles}</div>` : `<div class="list"><div class="empty">${t("noProductsHint")}</div></div>`}
           </div>
         </section>` +
         (loose.length ? band(t("secOtherClips"), loose.map(workRow), "") : "");
@@ -310,11 +328,11 @@
     const byStage = (s) => worksIn((w) => w.channel === id && w.stage === s);
     return hero({
       context, title: c.name, lede: c.note ? esc(c.note) : "",
-      actions: btn(t("newClip"), `data-new-work="${esc(id)}"`) + editBtn,
+      actions: editBtn,
       stats: [[byStage("doing").length, t("statInProgress")], [byStage("idea").length, t("statIdeas")], [byStage("done").length, t("statPublished")]]
     }) +
       band(t("secInProgress"), byStage("doing").map(workRow), t("emptyInProgress"), { gray: true }) +
-      band(t("secIdeas"), byStage("idea").map(workRow), `${t("emptyChannelIdeas")} <button class="btn-link" type="button" data-new-work="${esc(id)}">${t("addIdea")}</button>`) +
+      band(t("secIdeas"), byStage("idea").map(workRow), t("emptyChannelIdeas")) +
       band(t("secRecent"), byStage("done").map(workRow), t("emptyPublished"), { gray: true });
   }
 
@@ -335,13 +353,13 @@
 
     const heroHtml = hero({
       context, title: p.name,
-      actions: btn(t("newClip"), `data-new-work="${esc(c.id)}" data-product="${esc(id)}"`) + btn(t("editProduct"), `data-edit-product="${esc(id)}"`, "btn-outline", "edit"),
+      actions: btn(t("editProduct"), `data-edit-product="${esc(id)}"`, "btn-outline", "edit"),
       after: stage,
       stats: [[live, t("statClipsDone")], [clips.length, t("statClipsTotal")], [`<span class="stat-text"><span class="status st-${esc(p.status)}">${stLabel(p.status)}</span></span>`, t("factStatus")]]
     });
 
     return heroHtml +
-      band(t("secClips"), clips.map(workRow), `${t("noClipsYet")}. <button class="btn-link" type="button" data-new-work="${esc(c.id)}" data-product="${esc(id)}">${t("addClip")}</button>`, { gray: true }) + `
+      band(t("secClips"), clips.map(workRow), t("noClipsYet"), { gray: true }) + `
       <section class="band"><div class="inner"><dl class="facts" style="margin:0">${facts.map(([k, v]) => `<div class="fact"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl></div></section>`;
   }
 
@@ -425,14 +443,19 @@
 
   function editWork(index, preset = {}) {
     const isNew = index == null;
-    const w = isNew ? { title: "", channel: preset.channel || S().channels[0]?.id, product: preset.product || "", stage: "idea", note: "" } : S().pipeline[index];
+    const startCh = (preset.channel && channel(preset.channel)) || S().channels.find((c) => c.dept === preset.dept) || S().channels[0];
+    const w = isNew ? { title: "", channel: startCh?.id, product: preset.product || "", stage: "idea", note: "" } : S().pipeline[index];
+    const deptKey = channel(w.channel)?.dept;
+    const deptOptions = S().departments.filter((d) => S().channels.some((c) => c.dept === d.id)).map((d) => ({ id: d.id, label: d.name }));
+    const channelsOf = (dId) => S().channels.filter((c) => c.dept === dId).map((c) => ({ id: c.id, label: c.name }));
     const stageSeg = `<div class="seg-field" role="radiogroup" aria-label="${t("f_status")}">${STAGES.map((s) =>
       `<label><input type="radio" name="stage" value="${s}"${w.stage === s ? " checked" : ""}><span>${stLabel(s)}</span></label>`).join("")}</div>`;
     const productField = (ch, val) => S().products.some((p) => p.channel === ch) ? fieldWrap(t("f_product"), select("product", productOptions(ch), val || "")) : "";
     const body =
-      fieldWrap(t("f_title"), input("title", w.title, `required autocomplete="off" placeholder="${t("f_titlePh")}"`)) +
-      fieldWrap(t("f_channel"), select("channel", channelOptions(), w.channel)) +
+      fieldWrap(t("f_dept"), select("dept", deptOptions, deptKey)) +
+      fieldWrap(t("f_channel"), select("channel", channelsOf(deptKey), w.channel)) +
       `<div id="product-field">${productField(w.channel, w.product)}</div>` +
+      fieldWrap(t("f_title"), input("title", w.title, `required autocomplete="off" placeholder="${t("f_titlePh")}"`)) +
       `<div class="field"><span class="label">${t("f_status")}</span>${stageSeg}</div>` +
       fieldWrap(t("f_note"), textarea("note", w.note, `placeholder="${t("f_notePh")}"`));
     openInspector(window.BELL_I18N[lang][isNew ? "newClip" : "editClip"], body, {
@@ -452,7 +475,14 @@
       onDelete: isNew ? null : () => commit((s) => s.pipeline.splice(index, 1), "toastClipDeleted")
     });
     const form = $("insp-form");
-    form.elements.channel.addEventListener("change", () => { $("product-field").innerHTML = productField(form.elements.channel.value, ""); });
+    const syncProduct = () => { $("product-field").innerHTML = productField(form.elements.channel.value, ""); };
+    form.elements.dept.addEventListener("change", () => {
+      form.elements.channel.innerHTML = channelsOf(form.elements.dept.value).map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("");
+      syncProduct();
+    });
+    form.elements.channel.addEventListener("change", syncProduct);
+    // department, channel and product are usually already right (they come from the page), so start on the title
+    if (isNew) form.elements.title.focus();
   }
 
   function editProduct(id, channelId) {
@@ -507,9 +537,9 @@
     preview();
   }
 
-  function editChannel(id, deptId) {
+  function editChannel(id, deptId, presetDept) {
     const isNew = id == null;
-    const dId = deptId || S().departments[0].id;
+    const dId = deptId || presetDept || S().departments[0].id;
     const platformsFor = (deptKey, current) => {
       const d = dept(deptKey);
       const list = (d?.platforms?.length ? d.platforms : [d?.name]).filter(Boolean);
@@ -636,11 +666,11 @@
     }
     if ("boardFilter" in ds) { try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
     if ("editWork" in ds) return editWork(+ds.editWork);
-    if ("newWork" in ds) return editWork(null, { channel: ds.newWork || undefined, product: ds.product });
+    if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined, product: ds.product || undefined });
     if ("editProduct" in ds) return editProduct(ds.editProduct);
     if ("newProduct" in ds) return editProduct(null, ds.newProduct);
     if ("editChannel" in ds) return editChannel(ds.editChannel);
-    if ("newChannel" in ds) { e.preventDefault(); return editChannel(null, ds.newChannel || undefined); }
+    if ("newChannel" in ds) { e.preventDefault(); return editChannel(null, ds.newChannel || undefined, ds.dept || undefined); }
     if ("editDept" in ds) return editDept(ds.editDept);
   });
 
