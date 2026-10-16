@@ -75,6 +75,9 @@ window.BellStore = (function () {
       if (e.format == null) e.format = "";
       if (!e.stats) e.stats = {};
     });
+    s.works.forEach((wk) => {
+      wk.epSeq = Math.max(wk.epSeq || 0, ...s.episodes.filter((e) => e.work === wk.id).map((e) => e.n || 0));
+    });
     s.channels.forEach((c) => {
       if (!c.code) c.code = autoCode(c.name, s.channels.filter((x) => x.dept === c.dept && x !== c).map((x) => x.code).filter(Boolean));
     });

@@ -6,6 +6,7 @@
 //   works[]          = งาน 1 ชิ้น: สินค้า (affiliate) · เรื่อง (series) · เพลง (mv) · เรื่องเล่า (story) · รอบไลฟ์ (live)
 //                      props = ฟิลด์เฉพาะประเภท · characters/locations = เฉพาะประเภทที่มี · rules = กฎความต่อเนื่อง (series)
 //   รหัส: แผนก.code - ช่อง.code - งาน.no (3 หลัก) - ตัวอักษรชนิด+ตอน.n (2 หลัก) เช่น SHP-AFF-001-C01 (C=Clip E=EP V=Video S=Session)
+//         งาน.epSeq = ตัวนับเลขตอนของงาน (เลขตอนระบบกำหนดเอง แก้เองไม่ได้ ไม่ใช้ซ้ำแม้ลบตอนทิ้ง)
 //         ช่อง.seq = ตัวนับเลขงานของช่อง (เลขงานไม่ถูกใช้ซ้ำแม้ลบงานทิ้ง)
 //   formats          = ตัวอย่างรูปแบบคลิป (template กลุ่ม) ต่อประเภทช่อง ขึ้นเป็นตัวเลือกในช่อง "รูปแบบ" ของตอน พิมพ์เองได้ และที่เคยใช้แล้วจะขึ้นให้เลือกซ้ำ
 //   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · format = รูปแบบ/template ที่ใช้เป็นชื่อของตอน · title = ชื่อเรียกเพิ่ม (ไม่บังคับ) · stage = idea | script | producing | editing | published
@@ -121,7 +122,7 @@ window.STUDIO = {
 
   works: [
     {
-      id: "kasty-tofu-20l", no: 1, channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
+      id: "kasty-tofu-20l", no: 1, epSeq: 1, channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
       summary: "", cover: "", props: { category: "ทรายแมว" }, characters: [], locations: [], rules: "", note: "", updated: "2026-10-15"
     }
   ],
@@ -129,7 +130,7 @@ window.STUDIO = {
   episodes: [
     {
       id: "kasty-tofu-20l-1", work: "kasty-tofu-20l", n: 1, format: "คลิปรีวิวเห็นเฉพาะสินค้า", title: "", summary: "", stage: "published",
-      date: "", link: "", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video", updated: "2026-10-15"
+      date: "", link: "", note: "คลิปหมุนสินค้าให้เห็นรอบด้าน มีเสียงพากย์ชวนซื้อ", updated: "2026-10-15"
     }
   ]
 };

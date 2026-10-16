@@ -72,7 +72,7 @@ window.BELL_I18N = {
     fld_style: "Visual style", fld_engine: "Engine / tool", fld_lyrics: "Lyrics link", fld_narrator: "Narrator / voice",
     fld_script: "Script link", fld_when: "Date and time", fld_duration: "Duration", fld_products: "Products to feature", fld_runsheet: "Run-sheet link",
 
-    e_work: "Work", e_number: "Number", e_format: "Format", e_formatHint: "Pick one or type your own. It becomes the name of this clip in every list.", e_title: "Extra name (optional)", e_summary: "Summary", e_status: "Stage",
+    e_work: "Work", e_number: "Number", e_numberHint: "Set automatically and cannot be changed. It is part of the clip code.", e_format: "Format", e_formatHint: "Pick one or type your own. It becomes the name of this clip in every list.", e_title: "Extra name (optional)", e_summary: "Summary", e_status: "Stage",
     e_date: "Publish date", e_link: "Post link", e_linkHint: "Public post link only. Never a personal affiliate link.",
     secClips: "Published clips", secFormats: "By format", kpiSpend: "Total spend", kpiClips: "Published", kpiAvgCost: "Cost per published clip", kpiViews: "Total views",
     tClip: "Clip", tProduct: "Product / story", tPosted: "Posted", tLength: "Length", tCost: "Cost", tViews: "Views", tOrders: "Orders", tFormat: "Format", tClips: "Clips", tAvgCost: "Avg cost", tAvgViews: "Avg views", tTotal: "Total", tNoFormat: "No format yet",
@@ -182,7 +182,7 @@ window.BELL_I18N = {
     fld_style: "สไตล์ภาพ", fld_engine: "เครื่องมือที่ใช้", fld_lyrics: "ลิงก์เนื้อเพลง", fld_narrator: "ผู้บรรยาย / เสียงพากย์",
     fld_script: "ลิงก์สคริปต์", fld_when: "วันและเวลา", fld_duration: "ความยาว", fld_products: "สินค้าที่จะขาย", fld_runsheet: "ลิงก์แผนการไลฟ์",
 
-    e_work: "งาน", e_number: "ลำดับที่", e_format: "รูปแบบ", e_formatHint: "เลือกหรือพิมพ์เองได้ ใช้เป็นชื่อของตอนนี้ในทุกรายการ", e_title: "ชื่อเรียกเพิ่ม (ไม่บังคับ)", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
+    e_work: "งาน", e_number: "ลำดับที่", e_numberHint: "ระบบกำหนดเองและแก้ไม่ได้ เพราะเป็นส่วนหนึ่งของรหัสคลิป", e_format: "รูปแบบ", e_formatHint: "เลือกหรือพิมพ์เองได้ ใช้เป็นชื่อของตอนนี้ในทุกรายการ", e_title: "ชื่อเรียกเพิ่ม (ไม่บังคับ)", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
     e_date: "วันที่ลง", e_link: "ลิงก์โพสต์", e_linkHint: "ใส่เฉพาะลิงก์โพสต์สาธารณะ ห้ามใส่ลิงก์ affiliate ส่วนตัว",
     secClips: "คลิปที่ลงแล้ว", secFormats: "แยกตามรูปแบบ", kpiSpend: "ต้นทุนรวม", kpiClips: "ลงแล้ว", kpiAvgCost: "ต้นทุนต่อคลิปที่ลง", kpiViews: "ยอดชมรวม",
     tClip: "คลิป", tProduct: "สินค้า / เรื่อง", tPosted: "วันที่ลง", tLength: "ความยาว", tCost: "ต้นทุน", tViews: "ยอดชม", tOrders: "ออเดอร์", tFormat: "รูปแบบ", tClips: "คลิป", tAvgCost: "ต้นทุนเฉลี่ย", tAvgViews: "ชมเฉลี่ย", tTotal: "รวม", tNoFormat: "ยังไม่ระบุรูปแบบ",

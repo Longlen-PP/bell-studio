@@ -78,6 +78,7 @@
     const c = channel(w.channel), d = c && dept(c.dept);
     return [d?.code, c?.code, pad(w.no, 3)].filter(Boolean).join("-");
   };
+  const nextEpNo = (workId) => Math.max(work(workId)?.epSeq || 0, ...epsOf(workId).map((x) => x.n || 0)) + 1;
   const epCode = (e, short = false) => {
     const w = work(e.work);
     const tail = (KIND_LETTER[typeOfWork(w).noun] || "E") + pad(e.n, 2);
@@ -1013,6 +1014,7 @@
           note: v.note.trim(),
           characters: w.characters || [],
           locations: w.locations || [],
+          epSeq: w.epSeq || 0,
           updated: store.today()
         };
         commit((s) => {
@@ -1028,6 +1030,7 @@
             s.works.push(data);
             // a product is always sold through at least one clip, so Affiliate works start with one
             if (channel(chId)?.type === "affiliate") {
+              data.epSeq = 1;
               s.episodes.push({ id: `e-${store.rid()}`, work: data.id, n: 1, format: "", title: "", summary: "", stage: "idea", date: "", link: "", note: "", updated: store.today() });
             }
           } else {
@@ -1065,7 +1068,7 @@
     const isNew = id == null;
     const startWork = work(preset.work) || S().works[0];
     const e = isNew
-      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, format: "", title: "", length: "", engine: "", cost: "", stats: {}, statsAt: "", summary: "", stage: "idea", date: "", link: "", note: "" }
+      ? { work: startWork?.id, n: nextEpNo(startWork.id), format: "", title: "", length: "", engine: "", cost: "", stats: {}, statsAt: "", summary: "", stage: "idea", date: "", link: "", note: "" }
       : episode(id);
     const workOptions = S().channels.map((c) => ({
       group: `${dept(c.dept)?.name ?? ""} · ${c.name}`,
@@ -1075,7 +1078,7 @@
       `<label><input type="radio" name="stage" value="${s}"${e.stage === s ? " checked" : ""}><span>${stLabel(s)}</span></label>`).join("")}</div>`;
     const body =
       fieldWrap(L("e_work"), select("work", workOptions, e.work)) +
-      fieldWrap(L("e_number"), input("n", e.n, 'type="number" min="1" inputmode="numeric"')) +
+      fieldWrap(L("e_number"), input("n", e.n, 'type="number" readonly tabindex="-1" style="opacity:.7;cursor:not-allowed"'), esc(L("e_numberHint"))) +
       fieldWrap(L("e_format"), input("format", e.format || "", 'autocomplete="off" list="fmt-list"') + `<datalist id="fmt-list">${formatChoices(e.work).map((x) => `<option value="${esc(x)}">`).join("")}</datalist>`, esc(L("e_formatHint"))) +
       fieldWrap(L("e_title"), input("title", e.title, 'autocomplete="off"')) +
       fieldWrap(L("e_summary"), textarea("summary", e.summary, 'style="min-height:72px"')) +
@@ -1095,7 +1098,7 @@
         const data = {
           id: isNew ? `e-${store.rid()}` : id,
           work: f.elements.work.value,
-          n: Math.max(1, parseInt(f.elements.n.value, 10) || 1),
+          n: e.n,
           format: f.elements.format.value.trim(),
           title: f.elements.title.value.trim(),
           length: f.elements.dur.value.trim(),
@@ -1110,7 +1113,14 @@
           note: f.elements.note.value.trim(),
           updated: store.today()
         };
-        commit((s) => { if (isNew) s.episodes.push(data); else s.episodes[s.episodes.findIndex((x) => x.id === id)] = data; }, isNew ? "toastEpAdded" : "toastEpSaved");
+        commit((s) => {
+          if (isNew || data.work !== e.work) {
+            const wk = s.works.find((x) => x.id === data.work);
+            wk.epSeq = Math.max(wk.epSeq || 0, ...s.episodes.filter((x) => x.work === wk.id).map((x) => x.n || 0)) + 1;
+            data.n = wk.epSeq;
+          }
+          if (isNew) s.episodes.push(data); else s.episodes[s.episodes.findIndex((x) => x.id === id)] = data;
+        }, isNew ? "toastEpAdded" : "toastEpSaved");
       },
       onDelete: isNew ? null : () => commit((s) => { s.episodes = s.episodes.filter((x) => x.id !== id); }, "toastEpDeleted")
     });
@@ -1124,7 +1134,7 @@
       $("fmt-list").innerHTML = formatChoices(form.elements.work.value).map((x) => `<option value="${esc(x)}">`).join("");
     });
     if (isNew) {
-      form.elements.work.addEventListener("change", () => { form.elements.n.value = epsOf(form.elements.work.value).length + 1; });
+      form.elements.work.addEventListener("change", () => { form.elements.n.value = nextEpNo(form.elements.work.value); });
       form.elements.format.focus();
     }
   }
