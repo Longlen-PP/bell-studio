@@ -735,8 +735,9 @@
   }
 
   // ---------- library: everything ever made, searchable, so old clips and products can be found and reused ----------
-  const lib = { tab: "products", q: "", dept: "all", stage: "all", format: "all", limit: 40 };
+  const lib = { tab: "products", q: "", dept: "all", stage: "all", format: "all", sort: "new", limit: 40 };
   const hay = (...parts) => parts.filter(Boolean).join(" ").toLowerCase();
+  const viewsOf = (eps) => sumOf(eps.filter((e) => e.stage === "published"), (e) => e.stats?.views);
   function libItems() {
     const q = lib.q.trim().toLowerCase();
     const deptOk = (wk) => lib.dept === "all" || deptOfWork(wk) === lib.dept;
@@ -746,7 +747,11 @@
         const dates = eps.filter((e) => e.stage === "published" && e.date).map((e) => e.date).sort();
         const key = hay(wk.title, workCode(wk), wk.summary, wk.note, c?.name, d?.name, wk.props?.category, wk.props?.genre, ...eps.map((e) => e.format), ...eps.map((e) => e.title));
         return { wk, eps, c, d, first: dates[0], last: dates[dates.length - 1], key, sort: eps.reduce((m, e) => (e.updated > m ? e.updated : m), wk.updated || "") };
-      }).filter((x) => !q || x.key.includes(q)).sort((p, r) => String(r.sort).localeCompare(String(p.sort)));
+      }).filter((x) => !q || x.key.includes(q)).sort((p, r) => {
+        if (lib.sort === "views") return viewsOf(r.eps) - viewsOf(p.eps);
+        if (lib.sort === "clips") return r.eps.length - p.eps.length;
+        return String(r.sort).localeCompare(String(p.sort));
+      });
     }
     return S().episodes.filter((e) => {
       const wk = work(e.work);
@@ -754,7 +759,7 @@
       if (lib.stage !== "all" && e.stage !== lib.stage) return false;
       if (lib.format !== "all" && (e.format || "") !== lib.format) return false;
       return !q || hay(epCode(e), e.format, e.title, e.summary, e.note, e.engine, wk.title, channel(wk.channel)?.name, dept(deptOfWork(wk))?.name).includes(q);
-    }).sort((p, r) => String(r.date || r.updated).localeCompare(String(p.date || p.updated)));
+    }).sort((p, r) => lib.sort === "views" ? (numOf(r.stats?.views) || 0) - (numOf(p.stats?.views) || 0) : String(r.date || r.updated).localeCompare(String(p.date || p.updated)));
   }
   function libResultsHtml() {
     const items = libItems(), shown = items.slice(0, lib.limit);
@@ -774,6 +779,7 @@
             </span>
           </a>
           <span class="lib-num num">${views == null ? "" : showNum(views) + " " + esc(L("kpiViews").toLowerCase())}</span>
+          ${safeLink(wk.folder) ? `<a class="btn btn-outline lib-btn" href="${esc(safeLink(wk.folder))}" target="_blank" rel="noopener">${esc(L("libFolder"))}</a>` : ""}
           <button class="btn btn-outline lib-btn" type="button" data-lib-newclip="${esc(wk.id)}">${icon("plus")}${L("libNewClip")}</button>
         </div>`;
     }).join("") : shown.map((e) => {
@@ -800,6 +806,8 @@
     const formats = [...new Set(S().episodes.map((e) => e.format).filter(Boolean))].sort();
     const sel = (id, value, opts) => `<select class="select lib-sel" id="${id}" aria-label="${esc(id)}">${opts.map(([v, l]) => `<option value="${esc(v)}"${v === value ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
     const deptSel = sel("lib-dept", lib.dept, [["all", L("libAllDepts")]].concat(S().departments.map((d) => [d.id, d.name])));
+    const sortOpts = lib.tab === "products" ? [["new", L("sortNew")], ["views", L("sortViews")], ["clips", L("sortClips")]] : [["new", L("sortNew")], ["views", L("sortViews")]];
+    const sortSel = sel("lib-sort", sortOpts.some(([v]) => v === lib.sort) ? lib.sort : "new", sortOpts);
     const clipSel = lib.tab === "clips"
       ? sel("lib-stage", lib.stage, [["all", L("libAllStages")]].concat(STAGES.map((s) => [s, stLabel(s)]))) + sel("lib-format", lib.format, [["all", L("libAllFormats")]].concat(formats.map((f) => [f, f])))
       : "";
@@ -809,7 +817,7 @@
       hideTitle: true,
       title: L("library"),
       after: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("library"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>
-        <div class="lib-tools"><input class="input lib-q" id="lib-q" type="search" value="${esc(lib.q)}" placeholder="${esc(L("libSearch"))}" autocomplete="off">${deptSel}${clipSel}</div>`
+        <div class="lib-tools"><input class="input lib-q" id="lib-q" type="search" value="${esc(lib.q)}" placeholder="${esc(L("libSearch"))}" autocomplete="off">${deptSel}${clipSel}${sortSel}</div>`
     }) + `<section class="band gray"><div class="inner wide"><div id="lib-results">${libResultsHtml()}</div></div></section>`;
   }
   function reuseClip(id) {
@@ -892,7 +900,7 @@
         : kind === "datetime-local" ? esc(v.replace("T", " ")) : esc(v);
       return [L("fld_" + k), shown];
     });
-    const details = factList([...detailRows, w.note ? [L("f_note"), esc(w.note)] : null, [L("e_work"), `<span class="num">${esc(fmtDate(w.updated))}</span>`]]);
+    const details = factList([...detailRows, safeLink(w.folder) ? [L("w_folder"), `<a href="${esc(safeLink(w.folder))}" target="_blank" rel="noopener">${esc(L("libFolder"))}</a>`] : null, w.note ? [L("f_note"), esc(w.note)] : null, [L("e_work"), `<span class="num">${esc(fmtDate(w.updated))}</span>`]]);
     const about = (w.summary ? `<p class="copy">${esc(w.summary)}</p>` : "") + details;
 
     const miniGrid = (items, kind) => `<div class="gallery mini-grid">${items.map((it, i) => `
@@ -1127,13 +1135,14 @@
       return fieldWrap(L(aff ? "w_titleProduct" : "w_title"), input("title", v.title, `required autocomplete="off" placeholder="${esc(L("w_titlePh"))}"`)) +
         fieldWrap(L(aff ? "w_summaryProduct" : "w_summary"), textarea("summary", v.summary)) +
         imageField("cover", L(aff ? "w_coverProduct" : "w_cover"), v.cover, "thumb") +
+        fieldWrap(L("w_folder"), input("folder", v.folder || "", linkAttrs), esc(L("w_folderHint"))) +
         T.fields.map((k) => propInput(k, v.props?.[k] ?? "")).join("") +
         (T.rules ? fieldWrap(L("w_rules"), textarea("rules", v.rules), L("w_rulesHint")) : "") +
         fieldWrap(L("f_note"), textarea("note", v.note, `placeholder="${esc(L("f_notePh"))}"`));
     };
     const readValues = (form) => {
       const v = { props: {} };
-      ["title", "summary", "cover", "rules", "note"].forEach((k) => { v[k] = form.elements[k]?.value ?? ""; });
+      ["title", "summary", "cover", "folder", "rules", "note"].forEach((k) => { v[k] = form.elements[k]?.value ?? ""; });
       Object.keys(FIELD_KIND).concat(["category", "genre", "epLength", "style", "engine", "narrator", "duration"]).forEach((k) => {
         if (form.elements["p_" + k]) v.props[k] = form.elements["p_" + k].value;
       });
@@ -1158,6 +1167,7 @@
           title: v.title.trim(),
           summary: v.summary.trim(),
           cover: v.cover.trim(),
+          folder: (v.folder || "").trim(),
           props,
           rules: T.rules ? v.rules.trim() : (w.rules || ""),
           note: v.note.trim(),
@@ -1447,6 +1457,7 @@
     if (id === "lib-dept") { lib.dept = e.target.value; lib.limit = 40; render(); }
     else if (id === "lib-stage") { lib.stage = e.target.value; lib.limit = 40; render(); }
     else if (id === "lib-format") { lib.format = e.target.value; lib.limit = 40; render(); }
+    else if (id === "lib-sort") { lib.sort = e.target.value; lib.limit = 40; render(); }
   });
 
   scrim.addEventListener("click", closeInspector);
