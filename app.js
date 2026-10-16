@@ -137,6 +137,7 @@
   function route() {
     const [view, id] = location.hash.replace(/^#\/?/, "").split("/");
     if (view === "board") return { view: "next" };
+    if (view === "library") return { view: "library" };
     if (view === "dept" && dept(id)) return { view: "dept", id };
     if (view === "channel" && channel(id)) return { view: "channel", id };
     if ((view === "work" || view === "product") && work(id)) return { view: "work", id };
@@ -197,6 +198,7 @@
       <nav class="pillbar" aria-label="Main">
         <a class="brand" href="#/next" aria-label="${esc(S().company.name)} · ${esc(L("upNext"))}"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
         <div class="nav-links" id="nav-links">
+          <a class="nav-link" href="#/library"${cur(r.view === "library")}>${t("library")}</a>
           <div style="position:relative">
             <button class="nav-link" type="button" data-pop="depts" aria-expanded="false" aria-controls="pop-depts"${inDept ? ' aria-current="page"' : ""}>${t("departments")}${icon("down")}</button>
             <div class="popover" id="pop-depts" hidden>${deptMenu}</div>
@@ -732,6 +734,99 @@
       </section>`;
   }
 
+  // ---------- library: everything ever made, searchable, so old clips and products can be found and reused ----------
+  const lib = { tab: "products", q: "", dept: "all", stage: "all", format: "all", limit: 40 };
+  const hay = (...parts) => parts.filter(Boolean).join(" ").toLowerCase();
+  function libItems() {
+    const q = lib.q.trim().toLowerCase();
+    const deptOk = (wk) => lib.dept === "all" || deptOfWork(wk) === lib.dept;
+    if (lib.tab === "products") {
+      return S().works.filter(deptOk).map((wk) => {
+        const eps = epsOf(wk.id), c = channel(wk.channel), d = dept(c?.dept);
+        const dates = eps.filter((e) => e.stage === "published" && e.date).map((e) => e.date).sort();
+        const key = hay(wk.title, workCode(wk), wk.summary, wk.note, c?.name, d?.name, wk.props?.category, wk.props?.genre, ...eps.map((e) => e.format), ...eps.map((e) => e.title));
+        return { wk, eps, c, d, first: dates[0], last: dates[dates.length - 1], key, sort: eps.reduce((m, e) => (e.updated > m ? e.updated : m), wk.updated || "") };
+      }).filter((x) => !q || x.key.includes(q)).sort((p, r) => String(r.sort).localeCompare(String(p.sort)));
+    }
+    return S().episodes.filter((e) => {
+      const wk = work(e.work);
+      if (!wk || !deptOk(wk)) return false;
+      if (lib.stage !== "all" && e.stage !== lib.stage) return false;
+      if (lib.format !== "all" && (e.format || "") !== lib.format) return false;
+      return !q || hay(epCode(e), e.format, e.title, e.summary, e.note, e.engine, wk.title, channel(wk.channel)?.name, dept(deptOfWork(wk))?.name).includes(q);
+    }).sort((p, r) => String(r.date || r.updated).localeCompare(String(p.date || p.updated)));
+  }
+  function libResultsHtml() {
+    const items = libItems(), shown = items.slice(0, lib.limit);
+    if (!items.length) return `<p class="lib-none">${L("libNone")}</p>`;
+    const rows = lib.tab === "products" ? shown.map(({ wk, eps, c, d, first, last }) => {
+      const pub = eps.filter((e) => e.stage === "published");
+      const views = countOf(pub, (e) => e.stats?.views) ? sumOf(pub, (e) => e.stats?.views) : null;
+      const src = imageSrc(wk.cover);
+      return `
+        <div class="lib-row">
+          <a class="lib-main" href="#/work/${esc(wk.id)}">
+            <span class="lib-thumb">${imgTag(src, wk.title) || icon("photo")}</span>
+            <span class="lib-text">
+              <strong>${esc(wk.title)}</strong>
+              <em>${esc([workCode(wk), d?.name, c?.name, wk.props?.category || wk.props?.genre].filter(Boolean).join(" · "))}</em>
+              <em>${esc(t("libClipsOf", { p: pub.length, n: eps.length }))} · ${last ? esc(L("libFirst") + " " + fmtDate(first) + " · " + L("libLast") + " " + fmtDate(last)) : esc(L("libNever"))}</em>
+            </span>
+          </a>
+          <span class="lib-num num">${views == null ? "" : showNum(views) + " " + esc(L("kpiViews").toLowerCase())}</span>
+          <button class="btn btn-outline lib-btn" type="button" data-lib-newclip="${esc(wk.id)}">${icon("plus")}${L("libNewClip")}</button>
+        </div>`;
+    }).join("") : shown.map((e) => {
+      const wk = work(e.work), d = dept(deptOfWork(wk));
+      const bits = [numOf(e.stats?.views) != null ? showNum(+e.stats.views) + " " + L("kpiViews").toLowerCase() : "", numOf(e.stats?.orders) != null ? showNum(+e.stats.orders) + " " + L("kpiOrders").toLowerCase() : "", numOf(e.cost) != null ? showBaht(+e.cost) : ""].filter(Boolean).join(" · ");
+      return `
+        <div class="lib-row">
+          <button class="lib-main" type="button" data-edit-ep="${esc(e.id)}">
+            <span class="status st-${esc(e.stage)} lib-dot"><span class="visually-hidden">${stLabel(e.stage)}</span></span>
+            <span class="lib-text">
+              <strong>${esc(wk.title)}</strong>
+              <em>${esc(epName(typeOfWork(wk), e))}</em>
+              <em>${esc([d?.name, channel(wk.channel)?.name, stLabel(e.stage), e.date ? fmtDate(e.date) : ""].filter(Boolean).join(" · "))}</em>
+            </span>
+          </button>
+          <span class="lib-num num">${esc(bits)}</span>
+          <button class="btn btn-outline lib-btn" type="button" data-lib-reuse="${esc(e.id)}" title="${esc(L("libReuseTip"))}">${icon("plus")}${L("libReuse")}</button>
+        </div>`;
+    }).join("");
+    const more = items.length > shown.length ? `<button class="more-btn" type="button" data-lib-more>${t("libMore", { n: items.length - shown.length })}</button>` : "";
+    return `<p class="lib-count">${t("libResults", { n: items.length })}</p><div class="lib-list">${rows}</div>${more}`;
+  }
+  function viewLibrary() {
+    const formats = [...new Set(S().episodes.map((e) => e.format).filter(Boolean))].sort();
+    const sel = (id, value, opts) => `<select class="select lib-sel" id="${id}" aria-label="${esc(id)}">${opts.map(([v, l]) => `<option value="${esc(v)}"${v === value ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+    const deptSel = sel("lib-dept", lib.dept, [["all", L("libAllDepts")]].concat(S().departments.map((d) => [d.id, d.name])));
+    const clipSel = lib.tab === "clips"
+      ? sel("lib-stage", lib.stage, [["all", L("libAllStages")]].concat(STAGES.map((s) => [s, stLabel(s)]))) + sel("lib-format", lib.format, [["all", L("libAllFormats")]].concat(formats.map((f) => [f, f])))
+      : "";
+    const tabs = [["products", "libProducts", S().works.length], ["clips", "libClips", S().episodes.length]].map(([k, key, cnt]) =>
+      `<button class="dtab" type="button" data-lib-tab="${k}" aria-pressed="${lib.tab === k}" style="--c: var(--ink-2)"><span class="dtab-name">${L(key)}</span><span class="dtab-meta"><b class="num">${cnt}</b></span></button>`).join("");
+    return hero({
+      hideTitle: true,
+      title: L("library"),
+      after: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("library"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>
+        <div class="lib-tools"><input class="input lib-q" id="lib-q" type="search" value="${esc(lib.q)}" placeholder="${esc(L("libSearch"))}" autocomplete="off">${deptSel}${clipSel}</div>`
+    }) + `<section class="band gray"><div class="inner wide"><div id="lib-results">${libResultsHtml()}</div></div></section>`;
+  }
+  function reuseClip(id) {
+    const src = episode(id);
+    if (!src) return;
+    let code = "";
+    store.mutate((s) => {
+      const wk = s.works.find((x) => x.id === src.work);
+      wk.epSeq = Math.max(wk.epSeq || 0, ...s.episodes.filter((x) => x.work === wk.id).map((x) => x.n || 0)) + 1;
+      const copy = { id: `e-${store.rid()}`, work: src.work, n: wk.epSeq, format: src.format || "", title: src.title || "", summary: src.summary || "", stage: "idea", date: "", link: "", note: src.note || "", updated: store.today(), length: src.length || "", engine: src.engine || "", cost: "", stats: {}, statsAt: "" };
+      s.episodes.push(copy);
+      code = epCode(copy);
+    });
+    say(t("libReused", { code }));
+    go(`#/work/${src.work}`);
+  }
+
   function workTile(w) {
     const { pub, total, eps } = progress(w);
     const src = imageSrc(w.cover);
@@ -852,6 +947,7 @@
     const r = route();
     renderNav(r);
     main.innerHTML = ribbon() + (
+      r.view === "library" ? viewLibrary() :
       r.view === "dept" ? viewDept(r.id) :
       r.view === "channel" ? viewChannel(r.id) :
       r.view === "work" ? viewWork(r.id) : viewNext());
@@ -1307,6 +1403,10 @@
       location.hash = "#/next";
       return;
     }
+    if ("libTab" in ds) { lib.tab = ds.libTab; lib.limit = 40; return render(); }
+    if ("libMore" in ds) { lib.limit += 40; $("lib-results").innerHTML = libResultsHtml(); return; }
+    if ("libReuse" in ds) return reuseClip(ds.libReuse);
+    if ("libNewclip" in ds) return editEpisode(null, { work: ds.libNewclip });
     if ("findingsToggle" in ds) { findingsOpen = !findingsOpen; return render(); }
     if ("laneFocus" in ds) {
       boardFocus.stage = boardFocus.stage === ds.laneFocus ? null : ds.laneFocus;
@@ -1335,6 +1435,18 @@
     if (e.target.id !== "insp-form") return;
     e.preventDefault();
     openState?.onSave?.(e.target);
+  });
+
+  document.addEventListener("input", (e) => {
+    if (e.target.id !== "lib-q") return;
+    lib.q = e.target.value; lib.limit = 40;
+    $("lib-results").innerHTML = libResultsHtml();
+  });
+  document.addEventListener("change", (e) => {
+    const id = e.target.id;
+    if (id === "lib-dept") { lib.dept = e.target.value; lib.limit = 40; render(); }
+    else if (id === "lib-stage") { lib.stage = e.target.value; lib.limit = 40; render(); }
+    else if (id === "lib-format") { lib.format = e.target.value; lib.limit = 40; render(); }
   });
 
   scrim.addEventListener("click", closeInspector);
