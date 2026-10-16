@@ -692,7 +692,7 @@
         </a>`;
     }).join("") + `<button class="chan-card chan-new" type="button" data-new-channel="" data-dept="${esc(id)}">${icon("plus")}<span>${L("chNew")}</span></button>`;
 
-    const checks = (d.rules || []).length ? d.rules.map((r) => `<label class="ck-row"><input type="checkbox"><span>${esc(r)}</span></label>`).join("") : `<p class="muted-line">${t("noRules")}</p>`;
+    const checks = (d.rules || []).length ? d.rules.map((r) => `<div class="ck-row"><span>${esc(r)}</span></div>`).join("") : `<p class="muted-line">${t("noRules")}</p>`;
     return hero({
       titleLogo: id,
       title: d.name,

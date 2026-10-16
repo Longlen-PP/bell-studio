@@ -293,9 +293,7 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 .chan-new .icon { width: 22px; height: 22px; }
 .two-up { grid-template-columns: 1fr 1fr; }
 .ck-list { display: grid; gap: 4px; margin-top: 14px; }
-.ck-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--pane); font-size: 17px; line-height: 1.45; cursor: pointer; }
-.ck-row input { flex: none; width: 20px; height: 20px; margin-top: 2px; accent-color: var(--st-published); cursor: pointer; }
-.ck-row input:checked + span { color: var(--ink-3); }
+.ck-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--pane); font-size: 17px; line-height: 1.45; }
 @media (max-width: 980px) { .working, .two-up { grid-template-columns: 1fr; } .rk { grid-template-columns: minmax(70px, 120px) minmax(0, 1fr) auto; } .rk-side { grid-column: 2 / -1; text-align: left; margin-top: -8px; } }
 @media (max-width: 560px) { .wk-plot, .wk-labels { gap: 6px; } .wk-labels span { font-size: 12px; } }
 
@@ -309,7 +307,7 @@ html[lang="th"] .hero h1 { letter-spacing: -0.01em; line-height: 1.2; }
 .lib-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 20px; background: var(--pane); }
 .lib-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .lib-thumb { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; overflow: hidden; background: var(--gray); color: var(--ink-3); }
-.lib-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.lib-thumb img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
 .lib-dot { flex: none; }
 .lib-text { min-width: 0; display: grid; gap: 1px; }
 .lib-text strong { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
@@ -668,7 +666,6 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
   .menu-fold { width: 44px; height: 44px; }
   .dtab { min-height: 44px; }
   .chip, .more-btn, .chan-card.chan-new { min-height: 44px; }
-  .ck-row input { width: 24px; height: 24px; }
   .ck-row { padding: 12px 14px; }
   .link { min-height: 32px; }
 }
