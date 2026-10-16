@@ -91,13 +91,19 @@
   }
   const go = (hash) => { if (location.hash !== hash) location.hash = hash; else render(); };
 
+  // Platform logo for the four known departments (masked SVG painted in the brand colour); a colour dot for any other.
+  const BRAND_ICONS = ["facebook", "youtube", "tiktok", "shopee"];
+  const deptIcon = (id) => BRAND_ICONS.includes(id)
+    ? `<span class="brand-icon bi-${esc(id)}" aria-hidden="true"></span>`
+    : `<span class="dot" style="--c: var(--d-${esc(id)}, var(--ink-3))" aria-hidden="true"></span>`;
+
   // ---------- floating bar ----------
   function renderNav(r) {
     const cur = (cond) => (cond ? ' aria-current="page"' : "");
     const inDept = ["dept", "channel", "product"].includes(r.view);
     const deptMenu = S().departments.map((d) => `
       <div class="menu-group" style="--c: var(--d-${esc(d.id)})">
-        <a class="menu-link" href="#/dept/${esc(d.id)}"><span class="dot"></span>${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
+        <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
         ${S().channels.filter((c) => c.dept === d.id).map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}
       </div>`).join("") + `
       <div class="menu-group"><button class="menu-link add" type="button" data-new-channel="">${icon("plus")}${t("newChannel")}</button></div>`;
@@ -180,8 +186,8 @@
     const lonely = S().departments.filter((d) => !S().channels.some((c) => c.dept === d.id));
     const hasCh = S().channels.length > 0;
     const lonelyRows = lonely.map((d) => `
-      <a class="row" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
-        <span class="dot"></span>
+      <a class="row" href="#/dept/${esc(d.id)}">
+        ${deptIcon(d.id)}
         <span class="row-main"><span class="row-title">${esc(d.name)}</span><span class="row-sub">${t("needsChannelRow", { head: d.head.name })}</span></span>
         ${icon("chev", "icon chev")}
       </a>`);
@@ -204,7 +210,7 @@
     try { filter = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
     if (filter !== "all" && !dept(filter)) filter = "all";
     const chips = [`<button class="chip" type="button" data-board-filter="all" aria-pressed="${filter === "all"}">${t("all")}</button>`]
-      .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}" style="--c: var(--d-${esc(d.id)})"><span class="dot"></span>${esc(d.name)}</button>`)).join("");
+      .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}">${deptIcon(d.id)}${esc(d.name)}</button>`)).join("");
     const items = worksIn((w) => filter === "all" || deptOf(w) === filter);
     const lanes = STAGES.map((s) => {
       const cards = items.filter((w) => w.stage === s);
@@ -239,7 +245,7 @@
         </a>`;
     });
     return hero({
-      context: `<span class="dot" style="--c: var(--d-${esc(id)})"></span>${esc(d.head.name)}`,
+      context: `${deptIcon(id)}${esc(d.head.name)}`,
       title: d.name,
       lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
       actions: btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
@@ -265,7 +271,7 @@
   function viewChannel(id) {
     const c = channel(id), d = dept(c.dept);
     const platformBit = c.platform && c.platform !== d.name ? `${esc(c.platform)}<span class="sep">·</span>` : "";
-    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}`.replace(/<span class="sep">·<\/span>$/, "") + (c.status && c.status !== "active" ? `<span class="sep">·</span><span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : "");
+    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">·</span>${platformBit}`.replace(/<span class="sep">·<\/span>$/, "") + (c.status && c.status !== "active" ? `<span class="sep">·</span><span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : "");
     const editBtn = btn(t("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit");
 
     if (c.kind === "shop") {
@@ -313,7 +319,7 @@
     const p = product(id), c = channel(p.channel), d = dept(c.dept);
     const clips = worksIn((w) => w.product === id);
     const live = clips.filter((w) => w.stage === "done").length;
-    const context = `<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">›</span><a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`;
+    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a><span class="sep">›</span><a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`;
     const img = photoImg(p);
     const stage = img
       ? `<div class="product-stage">${img}</div>`

@@ -1,0 +1,4 @@
+Platform icons: Simple Icons v16.35.0 (https://simpleicons.org, CC0 1.0 Universal).
+Downloaded 2026-10-16 from https://cdn.jsdelivr.net/npm/simple-icons@16.35.0/icons/
+Files: facebook.svg, youtube.svg, tiktok.svg, shopee.svg (unchanged).
+The brand names and logos belong to their owners. They are used here only to identify the platform a department works on.

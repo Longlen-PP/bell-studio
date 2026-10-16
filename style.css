@@ -122,6 +122,15 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
 .menu-link.add { color: var(--link); font-size: 15px; }
 .menu-link.add .icon { width: 16px; height: 16px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--c, var(--ink-3)); }
+/* platform logos: Simple Icons SVGs used as masks, painted in each brand's colour (TikTok follows the ink so it flips in dark mode) */
+.brand-icon { display: inline-block; flex: none; width: 1.1em; height: 1.1em; background-color: var(--bc, var(--ink)); -webkit-mask: var(--bi) center / contain no-repeat; mask: var(--bi) center / contain no-repeat; }
+.bi-facebook { --bc: #0866ff; --bi: url(logos/facebook.svg); }
+.bi-youtube { --bc: #ff0000; --bi: url(logos/youtube.svg); }
+.bi-tiktok { --bc: var(--ink); --bi: url(logos/tiktok.svg); }
+.bi-shopee { --bc: #ee4d2d; --bi: url(logos/shopee.svg); }
+.menu-link .brand-icon, .row .brand-icon { width: 20px; height: 20px; }
+.chip .brand-icon { width: 16px; height: 16px; }
+.context .brand-icon { width: 24px; height: 24px; }
 
 /* ---------- ribbon (local edits) ---------- */
 .ribbon { margin-top: -68px; padding: 84px 16px 14px; background: var(--gray); text-align: center; font-size: 14px; color: var(--ink-2); }
