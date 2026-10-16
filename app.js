@@ -180,11 +180,11 @@
     const lonely = S().departments.filter((d) => !S().channels.some((c) => c.dept === d.id));
     const hasCh = S().channels.length > 0;
     const lonelyRows = lonely.map((d) => `
-      <button class="row" type="button" data-new-channel="${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
+      <a class="row" href="#/dept/${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
         <span class="dot"></span>
         <span class="row-main"><span class="row-title">${esc(d.name)}</span><span class="row-sub">${t("needsChannelRow", { head: d.head.name })}</span></span>
-        <span class="btn-link">${t("addChannel")}</span>
-      </button>`);
+        ${icon("chev", "icon chev")}
+      </a>`);
 
     return hero({
       logo: true,
@@ -245,7 +245,7 @@
       actions: btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
       stats: [[chans.length, t("statChannels")], [prodCount, t("statProducts")], [published, t("statClipsPublished")]]
     }) +
-      band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} <button class="btn-link" type="button" data-new-channel="${esc(id)}">${t("addChannel")}</button>`, { gray: true }) + `
+      band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} ${t("noChannelHint")}`, { gray: true }) + `
       <section class="band">
         <div class="inner">
           <div class="cols">

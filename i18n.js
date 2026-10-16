@@ -24,7 +24,7 @@ window.BELL_I18N = {
 
     ledBy: "Led by <strong>{head}</strong>.", statChannels: "Channels", statProducts: "Products", statClipsPublished: "Clips published",
     secChannels: "Channels", secTeam: "Team", secRules: "Rules", secSkills: "Skills",
-    noChannelYet: "{head} has no channel yet.", noRoles: "No roles yet.", noRules: "No rules yet.", noSkills: "No skills listed.",
+    noChannelYet: "{head} has no channel yet.", noChannelHint: "Create one from the Departments menu.", noRoles: "No roles yet.", noRules: "No rules yet.", noSkills: "No skills listed.",
 
     secProducts: "Products", secOtherClips: "Other clips in this channel",
     clipsOf: "{a} of {b} published", noClipsYet: "No clips yet", noPhoto: "No photo",
@@ -85,7 +85,7 @@ window.BELL_I18N = {
 
     ledBy: "ดูแลโดย <strong>{head}</strong>", statChannels: "ช่อง", statProducts: "สินค้า", statClipsPublished: "คลิปที่ลงแล้ว",
     secChannels: "ช่อง", secTeam: "ทีม", secRules: "กฎ", secSkills: "สกิล",
-    noChannelYet: "{head} ยังไม่มีช่อง", noRoles: "ยังไม่มีบทบาท", noRules: "ยังไม่มีกฎ", noSkills: "ยังไม่มีสกิล",
+    noChannelYet: "{head} ยังไม่มีช่อง", noChannelHint: "สร้างช่องได้จากเมนูแผนกด้านบน", noRoles: "ยังไม่มีบทบาท", noRules: "ยังไม่มีกฎ", noSkills: "ยังไม่มีสกิล",
 
     secProducts: "สินค้า", secOtherClips: "คลิปอื่นในช่องนี้",
     clipsOf: "ลงแล้ว {a} จาก {b}", noClipsYet: "ยังไม่มีคลิป", noPhoto: "ยังไม่มีรูป",
