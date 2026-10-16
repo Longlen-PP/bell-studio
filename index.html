@@ -11,7 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <script>
+    // GitHub Pages lets browsers keep files for ~10 minutes. A stamp that changes every minute makes a fresh deploy show up without a hard refresh.
+    window.BELL_V = Math.floor(Date.now() / 60000);
+    document.write('<link rel="stylesheet" href="style.css?v=' + window.BELL_V + '">');
+  </script>
 </head>
 <body>
   <div class="nav-wrap" id="nav"></div>
@@ -21,9 +25,14 @@
   <div class="scrim" id="scrim" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="data.js"></script>
-  <script src="i18n.js"></script>
-  <script src="store.js"></script>
-  <script src="app.js"></script>
+  <script>
+    ["data.js", "i18n.js", "store.js", "app.js"].forEach(function (src) {
+      var el = document.createElement("script");
+      el.src = src + "?v=" + window.BELL_V;
+      el.async = false; // keep this order
+      document.body.appendChild(el);
+    });
+  </script>
+  <noscript>This page needs JavaScript.</noscript>
 </body>
 </html>

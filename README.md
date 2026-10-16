@@ -15,6 +15,10 @@ https://longlen-pp.github.io/bell-studio/
 - `store.js` — data layer; today it keeps edits in this browser's localStorage, later it will talk to Firestore through the same interface
 - `index.html` / `style.css` / `app.js` — the UI (no build step)
 
+## Caching
+
+GitHub Pages lets browsers keep files for about 10 minutes. `index.html` adds a per-minute stamp (`?v=…`) to the stylesheet and scripts, so a fresh push shows up within about a minute without a hard refresh.
+
 ## Editing (Phase 1)
 
 Edits are saved **in this browser only**. A notice at the top offers:
