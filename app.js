@@ -393,7 +393,23 @@
           }).join("") + more : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
-    return hero({ title: L("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
+    // the rail: one dot per clip on its stage, so a glance shows where work sits and what has gone quiet
+    const IDLE_DAYS = 7, MAX_DOTS = 12;
+    const ageOf = (e) => Math.max(0, Math.round((Date.parse(store.today()) - Date.parse(e.updated || store.today())) / 86400000));
+    const isIdle = (e) => e.stage !== "published" && ageOf(e) >= IDLE_DAYS;
+    const idleN = items.filter(isIdle).length;
+    const railCols = STAGES.map((st) => {
+      const list = items.filter((e) => e.stage === st);
+      const dots = list.slice(0, MAX_DOTS).map((e, i) => {
+        const age = ageOf(e);
+        const tip = `${epCode(e)}${e.format ? " · " + e.format : ""} — ${age ? t("railAgo", { n: age }) : L("railToday")}`;
+        return `<button class="clip-dot st-${st}${isIdle(e) ? " idle" : ""}" type="button" data-edit-ep="${esc(e.id)}" title="${esc(tip)}" aria-label="${esc(tip)}" style="--i:${i}"></button>`;
+      }).join("") + (list.length > MAX_DOTS ? `<span class="rail-more">${t("railMore", { n: list.length - MAX_DOTS })}</span>` : "");
+      return `<div class="rail-col st-${st}"><div class="rail-dots">${dots}</div><div class="rail-bar"></div><div class="rail-label">${stLabel(st)}</div></div>`;
+    }).join("");
+    const rail = `<div class="rail" role="group" aria-label="${esc(L("board"))}">${railCols}</div>` +
+      (idleN ? `<p class="rail-note"><span class="clip-dot idle static"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "");
+    return hero({ hideTitle: true, title: L("board"), after: rail + `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
