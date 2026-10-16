@@ -117,6 +117,13 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
 .menu-group + .menu-group { border-top: 1px solid var(--fill-strong); }
 .menu-link { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-radius: 10px; background: none; font-size: 15px; text-align: left; cursor: pointer; }
 .menu-link:hover { background: var(--fill); }
+.menu-row { display: flex; align-items: center; gap: 2px; }
+.menu-row .menu-link { flex: 1; min-width: 0; }
+.menu-fold { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 10px; background: none; color: var(--ink-2); cursor: pointer; }
+.menu-fold:hover { background: var(--fill); color: var(--ink); }
+.menu-fold .chev { width: 14px; height: 14px; transition: transform 200ms var(--ease); transform: rotate(0deg); }
+.menu-fold[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.menu-subs[hidden] { display: none; }
 .menu-link.sub { padding-left: 30px; font-size: 14px; color: var(--ink-2); }
 .menu-link .muted { color: var(--ink-2); font-size: 13px; margin-left: auto; }
 .menu-link.add { color: var(--link); font-size: 15px; }

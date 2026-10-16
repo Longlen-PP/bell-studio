@@ -150,14 +150,24 @@
     : `<span class="dot" style="--c: var(--d-${esc(id)}, var(--ink-3))" aria-hidden="true"></span>`;
 
   // ---------- floating bar ----------
+  const menuOpen = new Set();
   function renderNav(r) {
     const cur = (cond) => (cond ? ' aria-current="page"' : "");
     const inDept = ["dept", "channel", "work"].includes(r.view);
-    const deptMenu = S().departments.map((d) => `
-      <div class="menu-group" style="--c: var(--d-${esc(d.id)})">
-        <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
-        ${S().channels.filter((c) => c.dept === d.id).map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}
-      </div>`).join("");
+    // each department can fold its channels; the department you are looking at starts open
+    const curDept = r.view === "dept" ? r.id : r.view === "channel" ? channel(r.id)?.dept : r.view === "work" ? deptOfWork(work(r.id)) : null;
+    const deptMenu = S().departments.map((d) => {
+      const chs = S().channels.filter((c) => c.dept === d.id);
+      const open = chs.length > 0 && (menuOpen.has(d.id) || curDept === d.id);
+      return `
+      <div class="menu-group" data-dept-group="${esc(d.id)}" style="--c: var(--d-${esc(d.id)})">
+        <div class="menu-row">
+          <a class="menu-link" href="#/dept/${esc(d.id)}">${deptIcon(d.id)}${esc(d.name)}<span class="muted">${esc(d.head.name)}</span></a>
+          ${chs.length ? `<button class="menu-fold" type="button" data-dept-toggle="${esc(d.id)}" aria-expanded="${open}" aria-label="${esc(d.name)} · ${esc(n(chs.length, "channel"))}">${icon("chev", "icon chev")}</button>` : ""}
+        </div>
+        <div class="menu-subs"${open ? "" : " hidden"}>${chs.map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}</div>
+      </div>`;
+    }).join("");
 
     // The page you are on decides what the forms start with.
     const ctx = (() => {
@@ -1080,6 +1090,14 @@
       if (!el.classList.contains("armed")) { el.classList.add("armed"); el.textContent = L("discard"); return; }
       store.reset();
       return say(L("toastReset"));
+    }
+    if ("deptToggle" in ds) {
+      const group = el.closest("[data-dept-group]"), subs = group.querySelector(".menu-subs");
+      const open = subs.hidden;
+      subs.hidden = !open;
+      el.setAttribute("aria-expanded", String(open));
+      if (open) menuOpen.add(ds.deptToggle); else menuOpen.delete(ds.deptToggle);
+      return;
     }
     if ("flowStage" in ds) {
       try { localStorage.setItem("bellstudio:board", ds.flowScope || "all"); } catch { /* ignore */ }
