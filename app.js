@@ -101,14 +101,6 @@
         ${S().channels.filter((c) => c.dept === d.id).map((c) => `<a class="menu-link sub" href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`).join("")}
       </div>`).join("") + `
       <div class="menu-group"><button class="menu-link add" type="button" data-new-channel="">${icon("plus")}${t("newChannel")}</button></div>`;
-    const hasCh = S().channels.length > 0;
-    const newMenu = `
-      <div class="menu-group">
-        ${hasCh ? `<button class="menu-link" type="button" data-new-work="">${t("newIdea")}</button>` : ""}
-        ${S().channels.some((c) => c.kind === "shop") ? `<button class="menu-link" type="button" data-new-product="${esc(S().channels.find((c) => c.kind === "shop").id)}">${t("newProduct")}</button>` : ""}
-        <button class="menu-link" type="button" data-new-channel="">${t("newChannel")}</button>
-      </div>`;
-
     nav.innerHTML = `
       <nav class="pillbar" aria-label="Main">
         <a class="brand" href="#/next"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
@@ -124,10 +116,6 @@
           <div class="lang" role="group" aria-label="${t("langLabel")}">
             <button type="button" data-lang="th" aria-pressed="${lang === "th"}">TH</button>
             <button type="button" data-lang="en" aria-pressed="${lang === "en"}">EN</button>
-          </div>
-          <div style="position:relative">
-            <button class="btn btn-sm" type="button" data-pop="new" aria-expanded="false" aria-controls="pop-new">${icon("plus")}${t("new")}</button>
-            <div class="popover" id="pop-new" hidden style="right:0">${newMenu}</div>
           </div>
           <button class="icon-btn menu-toggle" type="button" data-menu aria-label="${t("menu")}" aria-expanded="false" aria-controls="nav-links">${icon("menu")}</button>
         </div>
@@ -231,7 +219,7 @@
             </button>`).join("") : `<div class="empty">${t("nothingHere")}</div>`}</div>
         </section>`;
     }).join("");
-    return hero({ title: t("board"), lede: t("boardLede"), after: `<div class="chips" role="group" aria-label="${t("departments")}">${chips}</div>` }) +
+    return hero({ title: t("board"), lede: t("boardLede"), actions: S().channels.length ? btn(t("newIdea"), 'data-new-work=""') : "", after: `<div class="chips" role="group" aria-label="${t("departments")}">${chips}</div>` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
@@ -254,7 +242,7 @@
       context: `<span class="dot" style="--c: var(--d-${esc(id)})"></span>${esc(d.head.name)}`,
       title: d.name,
       lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
-      actions: btn(t("newChannel"), `data-new-channel="${esc(id)}"`) + btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
+      actions: btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
       stats: [[chans.length, t("statChannels")], [prodCount, t("statProducts")], [published, t("statClipsPublished")]]
     }) +
       band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} <button class="btn-link" type="button" data-new-channel="${esc(id)}">${t("addChannel")}</button>`, { gray: true }) + `
