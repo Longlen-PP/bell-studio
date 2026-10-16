@@ -361,48 +361,6 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
 .fact dd { margin: 6px 0 0; font-size: 21px; font-weight: 600; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 
 /* ---------- board ---------- */
-/* the crew on the Board */
-.crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; max-width: 1060px; margin: 0 auto 8px; }
-.crew-member { flex: 1 1 150px; max-width: 200px; display: grid; justify-items: center; gap: 2px; padding: 8px 6px 12px; border-radius: 22px; color: var(--ink); text-decoration: none; transition: transform 300ms var(--ease), background 300ms var(--ease); }
-.crew-member:hover { transform: translateY(-4px); background: color-mix(in srgb, var(--c) 10%, transparent); }
-.crew-stage { position: relative; display: block; width: 100%; max-width: 170px; aspect-ratio: 160 / 150; }
-.crew-svg, .crew-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.crew-member.has-img .crew-svg { display: none; }
-.crew-svg .desk { fill: var(--gray); stroke: var(--hairline); }
-.crew-svg .head, .crew-svg .arm { transform-box: fill-box; }
-.crew-svg .head { transform-origin: 50% 100%; animation: crew-breathe 4s ease-in-out infinite; }
-.crew-svg .eyes { transform-box: fill-box; transform-origin: center; animation: crew-blink 5s infinite; }
-.crew-svg .desk { filter: drop-shadow(0 2px 2px rgba(0,0,0,.18)); }
-.crew-svg .arm { transform-origin: 50% 0; }
-.crew-svg .zs text { font: 700 13px var(--font, system-ui); fill: var(--ink-3); animation: crew-z 3s ease-in infinite; }
-.crew-svg .zs text:nth-child(2) { animation-delay: .8s; } .crew-svg .zs text:nth-child(3) { animation-delay: 1.6s; }
-.crew-svg .stars path { fill: #ffcc33; transform-box: fill-box; transform-origin: center; animation: crew-star 1.4s ease-in-out infinite; }
-.crew-svg .stars path:nth-child(2) { animation-delay: .5s; }
-.crew-svg .sweat { fill: #5ac8fa; animation: crew-drip 1.6s ease-in infinite; }
-.pose-work .arm.l { animation: crew-type .38s ease-in-out infinite alternate; }
-.pose-work .arm.r { animation: crew-type .38s ease-in-out .19s infinite alternate; }
-.pose-sleep .head { animation: crew-nod 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
-.pose-cheer .head { animation: crew-hop .9s ease-in-out infinite; }
-.pose-cheer .arm.l { animation: crew-wave-l .9s ease-in-out infinite; }
-.pose-cheer .arm.r { animation: crew-wave-r .9s ease-in-out infinite; }
-.pose-worry .head { animation: crew-shake .5s ease-in-out infinite; }
-.crew-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
-.crew-role { font-size: 13px; color: var(--ink-3); }
-.crew-status { margin-top: 4px; font-size: 13px; padding: 3px 12px; border-radius: 999px; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--ink); }
-@keyframes crew-breathe { 50% { transform: translateY(-1.5px); } }
-@keyframes crew-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
-@keyframes crew-type { from { transform: translateY(0); } to { transform: translateY(-5px); } }
-@keyframes crew-nod { 0%, 100% { transform: rotate(7deg); } 50% { transform: rotate(13deg) translateY(2px); } }
-@keyframes crew-hop { 50% { transform: translateY(-8px); } }
-@keyframes crew-wave-l { 50% { transform: rotate(150deg) translateY(-3px); } 0%, 100% { transform: rotate(140deg); } }
-@keyframes crew-wave-r { 50% { transform: rotate(-150deg) translateY(-3px); } 0%, 100% { transform: rotate(-140deg); } }
-@keyframes crew-shake { 25% { transform: translateX(-1.5px); } 75% { transform: translateX(1.5px); } }
-@keyframes crew-z { 0% { opacity: 0; transform: translate(-4px, 6px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(6px, -10px); } }
-@keyframes crew-star { 50% { transform: scale(1.5) rotate(20deg); opacity: .6; } }
-@keyframes crew-drip { 0% { transform: translateY(-3px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
-@media (max-width: 560px) { .crew-member { flex-basis: 30%; } .crew-name { font-size: 15px; } .crew-role { display: none; } .crew-status { font-size: 11px; padding: 2px 8px; } }
-@media (prefers-reduced-motion: reduce) { .crew-svg * { animation: none !important; } }
-
 /* board rail: a dot per clip on its stage; a ringed dot = nothing has changed for a week */
 .rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; max-width: 1060px; margin: 0 auto; padding-top: 14px; }
 .rail-col { display: grid; gap: 12px; justify-items: center; }
