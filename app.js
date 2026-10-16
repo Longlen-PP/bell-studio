@@ -589,7 +589,7 @@
   const sumOf = (list, pick) => list.reduce((a, e) => a + (numOf(pick(e)) || 0), 0);
   const countOf = (list, pick) => list.filter((e) => numOf(pick(e)) != null).length;
   const avgOf = (list, pick) => { const k = countOf(list, pick); return k ? sumOf(list, pick) / k : null; };
-  function perfBands(eps) {
+  function perfParts(eps) {
     const pubs = eps.filter((e) => e.stage === "published").sort((a, b) => String(b.date || b.updated).localeCompare(String(a.date || a.updated)));
     const spend = countOf(eps, (e) => e.cost) ? sumOf(eps, (e) => e.cost) : null;
     const views = countOf(pubs, (e) => e.stats?.views) ? sumOf(pubs, (e) => e.stats?.views) : null;
@@ -617,15 +617,6 @@
     const clipsTable = pubs.length
       ? `<div class="tbl"><table>${head([["tClip"], ["tProduct"], ["tPosted"], ["tLength", 1], ["tCost", 1], ["tViews", 1]].concat(kind.sell ? [["tOrders", 1]] : [], kind.content ? [["tFollowers", 1], ["tWatch", 1]] : []))}<tbody>${clipRows}${totalRow}</tbody></table></div>`
       : `<div class="list"><div class="empty">${L("noClipsYet")}</div></div>`;
-    const first = `
-      <section class="band">
-        <div class="inner wide">
-          <div class="sec-head"><h2>${L("secClips")}${pubs.length ? ` <span class="count num">${pubs.length}</span>` : ""}</h2></div>
-          ${kpis}
-          ${clipsTable}
-          <p class="priv">${L("privNote")}</p>
-        </div>
-      </section>`;
     // group the published clips by format so the kinds of clip can be compared
     const groups = {};
     pubs.forEach((e) => { (groups[e.format || ""] = groups[e.format || ""] || []).push(e); });
@@ -633,14 +624,27 @@
       const g = groups[k];
       return `<tr><td>${esc(k || L("tNoFormat"))}</td><td class="n">${showNum(g.length)}</td><td class="n">${showBaht(avgOf(g, (e) => e.cost))}</td><td class="n">${showNum(avgOf(g, (e) => e.stats?.views))}</td>${kind.sell ? `<td class="n">${showNum(countOf(g, (e) => e.stats?.orders) ? sumOf(g, (e) => e.stats?.orders) : null)}</td>` : ""}${kind.content ? `<td class="n">${showNum(countOf(g, (e) => e.stats?.followers) ? sumOf(g, (e) => e.stats?.followers) : null)}</td>` : ""}</tr>`;
     }).join("");
-    const second = pubs.length ? `
-      <section class="band gray">
-        <div class="inner wide">
-          <div class="sec-head"><h2>${L("secFormats")}</h2></div>
-          <div class="tbl"><table>${head([["tFormat"], ["tClips", 1], ["tAvgCost", 1], ["tAvgViews", 1]].concat(kind.sell ? [["tOrders", 1]] : [], kind.content ? [["tFollowers", 1]] : []))}<tbody>${fmtRows}</tbody></table></div>
-        </div>
-      </section>` : "";
-    return first + second;
+    const fmtTable = pubs.length ? `<div class="tbl"><table>${head([["tFormat"], ["tClips", 1], ["tAvgCost", 1], ["tAvgViews", 1]].concat(kind.sell ? [["tOrders", 1]] : [], kind.content ? [["tFollowers", 1]] : []))}<tbody>${fmtRows}</tbody></table></div>` : "";
+    return { kpis, clipsTable, fmtTable, pubs, kind, groups };
+  }
+
+  // weekly bars for the last eight weeks, with the goal as a dashed line
+  function cadenceHtml(d, eps) {
+    const pubs = eps.filter((e) => e.stage === "published" && e.date);
+    const start = new Date(thisWeek().from + "T00:00:00");
+    const goal = +d.weeklyGoal || 0;
+    const weeks = Array.from({ length: 8 }, (_, k) => {
+      const s0 = new Date(start); s0.setDate(start.getDate() - 7 * (7 - k));
+      const s1 = new Date(s0); s1.setDate(s0.getDate() + 6);
+      const from = ymd(s0), to = ymd(s1);
+      return { from, to, label: `${s0.getDate()}/${s0.getMonth() + 1}`, n: pubs.filter((e) => e.date >= from && e.date <= to).length, now: k === 7 };
+    });
+    const max = Math.max(goal, ...weeks.map((x) => x.n), 1);
+    const bars = weeks.map((x) => `<div class="wk-col${x.now ? " now" : ""}" title="${esc(x.from)} – ${esc(x.to)}: ${x.n}"><span class="wk-n num">${x.n || ""}</span><i class="${x.n ? "" : "z"}" style="height:${x.n ? Math.max(8, x.n / max * 100) : 3}%"></i></div>`).join("");
+    const labels = weeks.map((x) => `<span class="${x.now ? "now" : ""}">${x.now ? L("cadenceNow") : x.label}</span>`).join("");
+    const line = goal ? `<div class="wk-goal" style="bottom:${goal / max * 100}%"><span>${t("cadenceGoal", { n: goal })}</span></div>` : "";
+    return `<div class="wk"><div class="wk-plot">${line}${bars}</div><div class="wk-labels">${labels}</div></div>
+      <p class="muted-line">${pubs.length ? L("cadenceSub") : L("cadenceEmpty")}</p>`;
   }
 
   function viewDept(id) {
@@ -649,31 +653,80 @@
     const ids = chans.map((c) => c.id);
     const workCount = S().works.filter((w) => ids.includes(w.channel)).length;
     const deptEps = S().episodes.filter((e) => ids.includes(work(e.work)?.channel));
-    const rows = chans.map((c) => {
-      const ws = worksOf(c.id);
-      const eps = epCountIn([c.id], () => true);
-      const bits = [platformShown(c, d), L("type_" + c.type), n(ws.length, "work"), n(eps, "ep")].filter(Boolean).join(" · ");
+    const perf = perfParts(deptEps);
+
+    // formats ranked by average views; the label on the right depends on what this kind of channel earns
+    const rank = Object.keys(perf.groups).map((k) => {
+      const g = perf.groups[k], sell = g.some((e) => SELL_TYPES.includes(typeOfEp(e)));
+      const orders = sumOf(g, (e) => e.stats?.orders), costed = g.filter((e) => numOf(e.cost) != null);
+      const fol = countOf(g, (e) => e.stats?.followers) ? sumOf(g, (e) => e.stats?.followers) : null;
+      const side = sell ? (orders > 0 && costed.length ? t("perfOrder", { c: showBaht(sumOf(costed, (e) => e.cost) / orders) }) : "—") : (fol != null ? t("perfFollow", { n: showNum(fol) }) : "—");
+      return { k: k || L("tNoFormat"), v: avgOf(g, (e) => e.stats?.views), n: g.length, side };
+    }).filter((x) => x.v != null).sort((p, q) => q.v - p.v);
+    const topV = rank.length ? rank[0].v : 1;
+    const fmtBars = rank.length ? rank.map((x) => `
+      <div class="rk"><span class="rk-name">${esc(x.k)}${x.n < 3 ? ` <em>${L("perfSmall")}</em>` : ""}</span><span class="rk-bar"><i style="width:${Math.max(3, x.v / topV * 100)}%"></i></span><span class="rk-val num">${showNum(x.v)}</span><span class="rk-side">${x.side}</span></div>`).join("") : `<p class="muted-line">${L("perfNone")}</p>`;
+    const topClips = perf.pubs.filter((e) => numOf(e.stats?.views) != null).sort((p, q) => q.stats.views - p.stats.views).slice(0, 5);
+    const topHtml = topClips.length ? topClips.map((e, k) => `
+      <button class="rk-clip" type="button" data-edit-ep="${esc(e.id)}"><b class="num">${k + 1}</b><span><strong>${esc(work(e.work).title)}</strong><em>${esc(epName(typeOfWork(work(e.work)), e, false))}</em></span><span class="num">${showNum(+e.stats.views)}</span></button>`).join("") : `<p class="muted-line">${L("perfNone")}</p>`;
+
+    const chanCards = chans.map((c) => {
+      const eps = deptEps.filter((e) => work(e.work)?.channel === c.id);
+      const bar = eps.length ? STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("") : "";
+      const pubN = eps.filter((e) => e.stage === "published").length;
+      const spend = countOf(eps, (e) => e.cost) ? sumOf(eps, (e) => e.cost) : null;
+      const views = countOf(eps, (e) => e.stats?.views) ? sumOf(eps, (e) => e.stats?.views) : null;
       return `
-        <a class="row" href="#/channel/${esc(c.id)}">
-          <span class="row-main"><span class="row-title">${esc(c.name)}</span><span class="row-sub">${esc(bits)}</span></span>
-          ${c.status && c.status !== "active" ? `<span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : ""}${icon("chev", "icon chev")}
+        <a class="chan-card" href="#/channel/${esc(c.id)}">
+          <span class="chan-name">${esc(c.name)}${c.status && c.status !== "active" ? ` <span class="status st-${esc(c.status)}">${stLabel(c.status)}</span>` : ""}</span>
+          <span class="chan-sub">${esc([platformShown(c, d), L("type_" + c.type)].filter(Boolean).join(" · "))}</span>
+          <span class="flow-bar mini" aria-hidden="true">${bar}</span>
+          <span class="chan-line">${esc([n(worksOf(c.id).length, "work"), n(eps.length, "ep"), t("dcPub", { pub: pubN })].join(" · "))}</span>
+          <span class="chan-line">${showBaht(spend)} · ${showNum(views)} ${L("kpiViews").toLowerCase()}</span>
         </a>`;
-    });
+    }).join("") + `<button class="chan-card chan-new" type="button" data-new-channel="" data-dept="${esc(id)}">${icon("plus")}<span>${L("chNew")}</span></button>`;
+
+    const checks = (d.rules || []).length ? d.rules.map((r) => `<label class="ck-row"><input type="checkbox"><span>${esc(r)}</span></label>`).join("") : `<p class="muted-line">${t("noRules")}</p>`;
     return hero({
       titleLogo: id,
       title: d.name,
       lede: `<strong>${esc(d.mission)}</strong>`,
       actions: btn(L("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
-      stats: flowStrip(deptEps, id, `${n(chans.length, "channel")} · ${n(workCount, "work")}`)
-    }) +
-      perfBands(deptEps) +
-      band(t("secChannels"), rows, `${t("noChannelYet")} ${t("noChannelHint")}`, { gray: true }) + `
+      stats: `<p class="flow-facts">${esc(n(chans.length, "channel"))} · ${esc(n(workCount, "work"))}</p>`
+    }) + `
       <section class="band">
-        <div class="inner">
-          <div class="cols">
-            <div class="col"><h3>${t("secTeam")}</h3><ul>${d.roles.map((r) => `<li><strong>${esc(r.title)}</strong> ${esc(r.duty)}</li>`).join("") || `<li>${t("noRoles")}</li>`}</ul></div>
-            <div class="col"><h3>${t("secRules")}</h3><ul>${d.rules.map((r) => `<li>${esc(r)}</li>`).join("") || `<li>${t("noRules")}</li>`}</ul></div>
-            <div class="col"><h3>${t("secSkills")}</h3><div class="skills">${d.skills.map((s) => `<span class="skill">${esc(s)}</span>`).join("") || `<span class="hint">${t("noSkills")}</span>`}</div></div>
+        <div class="inner wide">
+          <div class="sec-head"><h2>${L("secCadence")}</h2></div>
+          ${cadenceHtml(d, deptEps)}
+        </div>
+      </section>
+      <section class="band gray">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${L("secWorking")}</h2></div>
+          ${perf.kpis}
+          <div class="working" style="--c: var(--d-${esc(id)})">
+            <div class="wcard"><h3>${L("perfFormats")}</h3>${fmtBars}</div>
+            <div class="wcard"><h3>${L("perfTop")}</h3>${topHtml}</div>
+          </div>
+          <details class="more perf-all"><summary>${L("perfAll")}${perf.pubs.length ? ` (${perf.pubs.length})` : ""}</summary>
+            <div class="more-body">${perf.clipsTable}${perf.fmtTable}<p class="priv">${L("privNote")}</p></div>
+          </details>
+        </div>
+      </section>
+      <section class="band">
+        <div class="inner wide">
+          <div class="sec-head"><h2>${t("secChannels")}${chans.length ? ` <span class="count num">${chans.length}</span>` : ""}</h2></div>
+          <div class="chan-grid">${chanCards}</div>
+        </div>
+      </section>
+      <section class="band gray">
+        <div class="inner wide">
+          <div class="cols two-up">
+            <div class="col"><h3>${L("secPlaybook")}</h3><p class="muted-line">${L("playbookSub")}</p><div class="ck-list">${checks}</div></div>
+            <div class="col"><h3>${L("secTeamSkills")}</h3>
+              <ul>${d.roles.map((r) => `<li><strong>${esc(r.title)}</strong> ${esc(r.duty)}</li>`).join("") || `<li>${t("noRoles")}</li>`}</ul>
+              <div class="skills">${d.skills.map((s) => `<span class="skill">${esc(s)}</span>`).join("") || `<span class="hint">${t("noSkills")}</span>`}</div>
+            </div>
           </div>
         </div>
       </section>`;
