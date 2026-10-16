@@ -18,6 +18,7 @@
 window.STUDIO = {
   v: 2,
   version: "1.0",
+  crewImages: [], // รูปตัวละคร 3D ที่ใส่ไว้ใน web/characters/ ใส่ชื่อไฟล์ไม่มีนามสกุล เช่น "luna-work" ดูวิธีใน .knowledge/character-prompts.md
   updated: "2026-10-16",
   company: {
     name: "Bell Studio",

@@ -83,6 +83,9 @@
     const tail = (KIND_LETTER[typeOfWork(w).noun] || "E") + pad(e.n, 2);
     return short ? tail : `${workCode(w)}-${tail}`;
   };
+  const IDLE_DAYS = 7;
+  const ageOf = (e) => Math.max(0, Math.round((Date.parse(store.today()) - Date.parse(e.updated || store.today())) / 86400000));
+  const isIdle = (e) => e.stage !== "published" && ageOf(e) >= IDLE_DAYS;
   // the format (template) is the clip's name; the optional title adds detail after it
   const epLabel = (e) => [e.format, e.title].filter(Boolean).join(" — ");
   const epName = (T, e, short = false) => `${epCode(e, short)}${epLabel(e) ? " · " + epLabel(e) : ""}`;
@@ -352,6 +355,84 @@
     });
   }
 
+  // ---------- the crew: one cartoon per department head, posed by what is going on in their department ----------
+  // If web/characters/<id>-<pose>.webp exists and is listed in STUDIO.crewImages (e.g. "luna-work"), that picture is used instead of the drawing.
+  const CREW_LOOK = {
+    facebook: { hair: "long", hc: "#3b2a4a", skin: "#ffd9b8" },
+    youtube: { hair: "short", hc: "#20222e", skin: "#f1c9a5" },
+    tiktok: { hair: "long", hc: "#7a3b2e", skin: "#ffd9b8", crown: true },
+    shopee: { hair: "short", hc: "#2b2b2b", skin: "#e5b78f", cap: true },
+    bell: { hair: "bob", hc: "#1f1f1f", skin: "#ffdcc3", headset: true }
+  };
+  function crewSvg(id, pose, color) {
+    const k = CREW_LOOK[id] || CREW_LOOK.bell;
+    const back = k.hair === "long" ? `<path d="M52 60 q0 -36 28 -36 q28 0 28 36 v40 q-14 8 -28 0 q-14 8 -28 0z" fill="${k.hc}"/>`
+      : k.hair === "bob" ? `<path d="M53 62 q0 -38 27 -38 q27 0 27 38 v12 q-27 8 -54 0z" fill="${k.hc}"/>` : "";
+    const front = k.hair === "short"
+      ? `<path d="M54 56 q0 -32 26 -32 q26 0 26 32 q-10 -14 -26 -14 q-16 0 -26 14z" fill="${k.hc}"/>`
+      : `<path d="M54 56 q26 -32 52 0 q-8 -12 -26 -12 q-18 0 -26 12z" fill="${k.hc}"/>`;
+    const extra = (k.crown ? `<path d="M68 32 l6 -11 l6 8 l6 -8 l6 11z" fill="#ffcc33"/>` : "")
+      + (k.cap ? `<path d="M54 46 q26 -28 52 0z" fill="${color}"/><rect x="54" y="44" width="70" height="6" rx="3" fill="${color}"/>` : "")
+      + (k.headset ? `<path d="M54 58 q0 -34 26 -34 q26 0 26 34" fill="none" stroke="#333" stroke-width="4"/><circle cx="54" cy="62" r="6" fill="#333"/><path d="M54 68 q4 14 22 14" fill="none" stroke="#333" stroke-width="2.5"/>` : "");
+    const eyes = pose === "sleep" ? `<path d="M64 61 q5 4 10 0 M86 61 q5 4 10 0" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"/>`
+      : pose === "cheer" ? `<path d="M64 62 q5 -6 10 0 M86 62 q5 -6 10 0" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"/>`
+      : `<g class="eyes"><circle cx="69" cy="60" r="3.4" fill="#222"/><circle cx="91" cy="60" r="3.4" fill="#222"/><circle cx="70" cy="58.8" r="1.1" fill="#fff"/><circle cx="92" cy="58.8" r="1.1" fill="#fff"/></g>`
+        + (pose === "worry" ? `<path d="M63 51 l11 3 M97 51 l-11 3" stroke="#222" stroke-width="2" stroke-linecap="round"/>` : "");
+    const mouth = pose === "sleep" ? `<ellipse cx="80" cy="72" rx="3" ry="2.4" fill="#c97b7b"/>`
+      : pose === "cheer" ? `<path d="M73 69 q7 10 14 0z" fill="#c0504d"/>`
+      : pose === "worry" ? `<path d="M74 72 q3 -3 6 0 q3 3 6 0" fill="none" stroke="#a24" stroke-width="2" stroke-linecap="round"/>`
+      : `<path d="M74 69 q6 5 12 0" fill="none" stroke="#a24" stroke-width="2.2" stroke-linecap="round"/>`;
+    const fx = pose === "sleep" ? `<g class="zs"><text x="104" y="40">z</text><text x="114" y="28">z</text><text x="124" y="16">Z</text></g>`
+      : pose === "cheer" ? `<g class="stars"><path d="M26 34 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M130 30 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z"/></g>`
+      : pose === "worry" ? `<path class="sweat" d="M108 44 q-5 8 0 12 q5 -4 0 -12z"/>` : "";
+    return `<svg class="crew-svg pose-${pose}" viewBox="0 0 160 150" aria-hidden="true">
+      <ellipse cx="80" cy="141" rx="56" ry="6" fill="rgba(0,0,0,.14)"/>
+      <rect x="52" y="84" width="56" height="46" rx="18" fill="${color}"/>
+      ${back}
+      <g class="head">
+        <circle cx="80" cy="58" r="26" fill="${k.skin}"/>
+        ${front}${extra}
+        ${eyes}<circle cx="63" cy="68" r="4" fill="#ff9aa2" opacity=".55"/><circle cx="97" cy="68" r="4" fill="#ff9aa2" opacity=".55"/>${mouth}
+      </g>
+      <rect class="arm l" x="42" y="96" width="15" height="28" rx="7.5" fill="${color}" stroke="rgba(0,0,0,.12)"/>
+      <rect class="arm r" x="103" y="96" width="15" height="28" rx="7.5" fill="${color}" stroke="rgba(0,0,0,.12)"/>
+      <rect class="desk" x="22" y="114" width="116" height="26" rx="10"/>
+      <rect class="lap" x="60" y="100" width="40" height="22" rx="4" fill="${color}"/>
+      <circle cx="80" cy="111" r="3" fill="#fff" opacity=".85"/>
+      ${fx}
+    </svg>`;
+  }
+  function crewScene() {
+    const all = S().episodes;
+    const recent = (e) => e.stage === "published" && ageOf({ updated: e.date || e.updated }) <= 3;
+    const poseOf = (eps, hasChannel) => {
+      const idle = eps.filter(isIdle).length, doing = eps.filter((e) => IN_PROGRESS.includes(e.stage)).length;
+      if (!hasChannel) return { pose: "sleep", text: L("crewSleep") };
+      if (idle) return { pose: "worry", text: t("crewWorry", { n: idle }) };
+      if (doing) return { pose: "work", text: t("crewWork", { n: doing }) };
+      if (eps.some(recent)) return { pose: "cheer", text: L("crewCheer") };
+      return { pose: "wait", text: L("crewWait") };
+    };
+    const imgs = window.STUDIO.crewImages || [];
+    const member = (id, name, role, eps, hasChannel, href, color) => {
+      const { pose, text } = poseOf(eps, hasChannel);
+      const key = `${name.toLowerCase()}-${pose}`;
+      const pic = imgs.includes(key) ? `<img class="crew-img" src="characters/${esc(key)}.webp" alt="" loading="lazy">` : "";
+      return `<a class="crew-member${pic ? " has-img" : ""}" href="${href}" style="--c:${color}">
+        <span class="crew-stage">${crewSvg(id, pose, color)}${pic}</span>
+        <span class="crew-name">${esc(name)}</span><span class="crew-role">${esc(role)}</span><span class="crew-status">${esc(text)}</span>
+      </a>`;
+    };
+    const people = S().departments.map((d) => {
+      const ids = S().channels.filter((c) => c.dept === d.id).map((c) => c.id);
+      const eps = all.filter((e) => ids.includes(work(e.work)?.channel));
+      return { id: d.id, html: member(d.id, d.head.name, d.name, eps, ids.length > 0, `#/dept/${esc(d.id)}`, `var(--d-${esc(d.id)})`) };
+    });
+    const ceo = member("bell", S().ceo?.name || "Bell", S().ceo?.title || "CEO", all, S().channels.length > 0, "#/next", "var(--ink-2)");
+    const order = people.slice(0, 2).map((p) => p.html).concat([ceo], people.slice(2).map((p) => p.html));
+    return `<div class="crew" role="group" aria-label="${esc(S().company.name)}">${order.join("")}</div>`;
+  }
+
   function viewBoard() {
     let filter = "all";
     try { filter = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
@@ -394,9 +475,7 @@
         </section>`;
     }).join("");
     // the rail: one dot per clip on its stage, so a glance shows where work sits and what has gone quiet
-    const IDLE_DAYS = 7, MAX_DOTS = 12;
-    const ageOf = (e) => Math.max(0, Math.round((Date.parse(store.today()) - Date.parse(e.updated || store.today())) / 86400000));
-    const isIdle = (e) => e.stage !== "published" && ageOf(e) >= IDLE_DAYS;
+    const MAX_DOTS = 12;
     const idleN = items.filter(isIdle).length;
     const railCols = STAGES.map((st) => {
       const list = items.filter((e) => e.stage === st);
@@ -409,7 +488,7 @@
     }).join("");
     const rail = `<div class="rail" role="group" aria-label="${esc(L("board"))}">${railCols}</div>` +
       (idleN ? `<p class="rail-note"><span class="clip-dot idle static"></span>${t("railIdle", { n: idleN, d: IDLE_DAYS })}</p>` : "");
-    return hero({ hideTitle: true, title: L("board"), after: rail + `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
+    return hero({ hideTitle: true, title: L("board"), after: crewScene() + rail + `<div class="chips" role="group" aria-label="${L("departments")}">${chips}</div>` }) +
       `<section class="band gray"><div class="inner wide"><div class="board">${lanes}</div></div></section>`;
   }
 
