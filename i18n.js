@@ -74,7 +74,7 @@ window.BELL_I18N = {
 
     e_work: "Work", e_number: "Number", e_numberHint: "Set automatically and cannot be changed. It is part of the clip code.", e_format: "Format", e_formatHint: "Pick one or type your own. It becomes the name of this clip in every list.", e_title: "Extra name (optional)", e_summary: "Summary", e_status: "Stage",
     e_date: "Publish date", e_link: "Post link", e_linkHint: "Public post link only. Never a personal affiliate link.",
-    secClips: "Published clips", secFormats: "By format", kpiSpend: "Total spend", kpiClips: "Published", kpiAvgCost: "Cost per published clip", kpiViews: "Total views",
+    secClips: "Published clips", secFormats: "By format", kpiNone: "No results yet. Costs and view counts appear here once you fill them in on a published clip.", kpiSpend: "Total spend", kpiClips: "Published", kpiAvgCost: "Cost per published clip", kpiViews: "Total views",
     tClip: "Clip", tProduct: "Product / story", tPosted: "Posted", tLength: "Length", tCost: "Cost", tViews: "Views", tOrders: "Orders", tFormat: "Format", tClips: "Clips", tAvgCost: "Avg cost", tAvgViews: "Avg views", tTotal: "Total", tNoFormat: "No format yet",
     noClipsYet: "Nothing is published here yet. Add cost and results to a clip and they show up in this table.", privNote: "Costs and results you enter stay private. They are not published to the website.",
     secProd: "Production and results", e_length: "Length (seconds)", e_engine: "Made with", e_cost: "Cost (฿)", e_costHint: "Credits or fees spent on this clip, in baht.", e_statsAt: "Results as of", e_resultsHint: "Fill in whatever you have. Empty stays empty.",
@@ -189,7 +189,7 @@ window.BELL_I18N = {
 
     e_work: "งาน", e_number: "ลำดับที่", e_numberHint: "ระบบกำหนดเองและแก้ไม่ได้ เพราะเป็นส่วนหนึ่งของรหัสคลิป", e_format: "รูปแบบ", e_formatHint: "เลือกหรือพิมพ์เองได้ ใช้เป็นชื่อของตอนนี้ในทุกรายการ", e_title: "ชื่อเรียกเพิ่ม (ไม่บังคับ)", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
     e_date: "วันที่ลง", e_link: "ลิงก์โพสต์", e_linkHint: "ใส่เฉพาะลิงก์โพสต์สาธารณะ ห้ามใส่ลิงก์ affiliate ส่วนตัว",
-    secClips: "คลิปที่ลงแล้ว", secFormats: "แยกตามรูปแบบ", kpiSpend: "ต้นทุนรวม", kpiClips: "ลงแล้ว", kpiAvgCost: "ต้นทุนต่อคลิปที่ลง", kpiViews: "ยอดชมรวม",
+    secClips: "คลิปที่ลงแล้ว", secFormats: "แยกตามรูปแบบ", kpiNone: "ยังไม่มีผลลัพธ์ ต้นทุนและยอดชมจะขึ้นตรงนี้เมื่อกรอกในฟอร์มของคลิปที่ลงแล้ว", kpiSpend: "ต้นทุนรวม", kpiClips: "ลงแล้ว", kpiAvgCost: "ต้นทุนต่อคลิปที่ลง", kpiViews: "ยอดชมรวม",
     tClip: "คลิป", tProduct: "สินค้า / เรื่อง", tPosted: "วันที่ลง", tLength: "ความยาว", tCost: "ต้นทุน", tViews: "ยอดชม", tOrders: "ออเดอร์", tFormat: "รูปแบบ", tClips: "คลิป", tAvgCost: "ต้นทุนเฉลี่ย", tAvgViews: "ชมเฉลี่ย", tTotal: "รวม", tNoFormat: "ยังไม่ระบุรูปแบบ",
     noClipsYet: "ยังไม่มีคลิปที่ลงแล้วที่นี่ ใส่ต้นทุนและผลลัพธ์ในคลิป แล้วจะขึ้นในตารางนี้", privNote: "ต้นทุนและผลลัพธ์ที่กรอกเป็นข้อมูลส่วนตัว ไม่ถูกเผยแพร่ขึ้นเว็บไซต์",
     secProd: "ต้นทุนและผลลัพธ์", e_length: "ความยาว (วินาที)", e_engine: "ทำด้วยเครื่องมือ", e_cost: "ต้นทุน (บาท)", e_costHint: "เครดิตหรือค่าใช้จ่ายที่ใช้กับคลิปนี้ เป็นบาท", e_statsAt: "ผลลัพธ์ ณ วันที่", e_resultsHint: "กรอกเท่าที่มี ช่องว่างปล่อยว่างได้",

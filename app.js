@@ -310,7 +310,7 @@
     }
     return `
       <button class="row" type="button" data-edit-ep="${esc(e.id)}">
-        <span class="status st-${esc(e.stage)}"><span class="visually-hidden">${stLabel(e.stage)}</span></span>
+        <span class="status st-${esc(e.stage)}" aria-hidden="true"></span>
         <span class="row-main"><span class="row-title">${main}</span>${sub ? `<span class="row-sub">${sub}</span>` : ""}${tags}</span>
         <span class="status-text">${stLabel(e.stage)}</span>
         <span class="row-meta num">${esc(fmtDate(e.date || e.updated))}</span>
@@ -346,10 +346,10 @@
       const doingN = eps.filter((e) => IN_PROGRESS.includes(e.stage)).length;
       const pubN = eps.filter((e) => e.stage === "published").length;
       const bar = STAGES.map((st) => { const k = eps.filter((e) => e.stage === st).length; return k ? `<i class="st-${st}" style="flex:${k}"></i>` : ""; }).join("");
-      const sx = x < 50 ? -1 : 1, ny = y * 5.2, ex = x * 10 - sx * 130, mid = (500 + ex) / 2;
+      const sx = x < 50 ? -1 : 1, ny = y * 4.3, ex = x * 10 - sx * 130, mid = (500 + ex) / 2;
       const state = (!ids.length ? "idle" : doingN ? "busy" : "live") + (dept(picked) && picked !== d.id ? " dim" : "");
       const id = `lk-${esc(d.id)}`;
-      const link = `<path id="${id}" class="map-link ${state}" d="M500 260 C ${mid} 260, ${mid} ${ny}, ${ex} ${ny}" style="--c: var(--d-${esc(d.id)})"/>`;
+      const link = `<path id="${id}" class="map-link ${state}" d="M500 215 C ${mid} 215, ${mid} ${ny}, ${ex} ${ny}" style="--c: var(--d-${esc(d.id)})"/>`;
       const dot = (k, back) => `<circle r="${back ? 5 : 4.5}" class="map-dot${back ? " back" : ""}" style="--c: ${back ? "var(--st-published)" : `var(--d-${esc(d.id)})`}"><animateMotion dur="3.6s" begin="${(k * 1.2 + (back ? 0.6 : 0)).toFixed(1)}s" repeatCount="indefinite"${back ? ' keyPoints="1;0" keyTimes="0;1" calcMode="linear"' : ""}><mpath href="#${id}"/></animateMotion></circle>`;
       const dots = Array.from({ length: Math.min(doingN, 3) }, (_, k) => dot(k, false)).concat(Array.from({ length: Math.min(pubN, 3) }, (_, k) => dot(k, true))).join("");
       const line = ids.length ? [n(ids.length, "channel"), n(works, "work"), t("dcPub", { pub: pubN })].join(" · ") : "";
@@ -363,7 +363,7 @@
     });
     return `
       <div class="map" role="group" aria-label="${esc(S().company.name)}">
-        <svg class="map-svg" viewBox="0 0 1000 520" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.dots).join("")}</svg>
+        <svg class="map-svg" viewBox="0 0 1000 430" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.dots).join("")}</svg>
         <button class="map-core" type="button" data-board-filter="all" aria-pressed="${picked === "all"}" title="${esc(L("showAll"))}" aria-label="${esc(L("showAll"))}"><span class="map-orb" aria-hidden="true"></span><span class="logo-mark" aria-hidden="true"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></button>
         ${nodes.map((x) => x.html).join("")}
       </div>`;
@@ -457,7 +457,10 @@
     const tail = kind.sell && kind.content ? tile(showNum(orders), L("kpiOrders")) + tile(showNum(followers), L("kpiFollowers"))
       : kind.sell ? tile(showNum(orders), L("kpiOrders")) + tile(showBaht(costPub), L("kpiAvgCost"))
       : tile(showNum(followers), L("kpiFollowers")) + tile(watchTxt, L("kpiWatch"));
-    const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(views), L("kpiViews"))}${tail}</div>`;
+    const anyResult = [spend, views, orders, followers, costPub, watchAvg].some((v) => v != null);
+    const kpis = anyResult
+      ? `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(views), L("kpiViews"))}${tail}</div>`
+      : `<p class="kpi-empty">${L("kpiNone")}</p>`;
 
     // weekly goal: the department's own goal, or the sum over departments that have one
     const scopedDept = filter === "all" || dept(filter);
@@ -641,12 +644,13 @@
       const from = ymd(s0), to = ymd(s1);
       return { from, to, label: `${s0.getDate()}/${s0.getMonth() + 1}`, n: pubs.filter((e) => e.date >= from && e.date <= to).length, now: k === 7 };
     });
+    if (!pubs.length) return `<p class="muted-line">${L("cadenceEmpty")}</p>`;
     const max = Math.max(goal, ...weeks.map((x) => x.n), 1);
     const bars = weeks.map((x) => `<div class="wk-col${x.now ? " now" : ""}" title="${esc(x.from)} – ${esc(x.to)}: ${x.n}"><span class="wk-n num">${x.n || ""}</span><i class="${x.n ? "" : "z"}" style="height:${x.n ? Math.max(8, x.n / max * 100) : 3}%"></i></div>`).join("");
     const labels = weeks.map((x) => `<span class="${x.now ? "now" : ""}">${x.now ? L("cadenceNow") : x.label}</span>`).join("");
     const line = goal ? `<div class="wk-goal" style="bottom:${goal / max * 100}%"><span>${t("cadenceGoal", { n: goal })}</span></div>` : "";
     return `<div class="wk"><div class="wk-plot">${line}${bars}</div><div class="wk-labels">${labels}</div></div>
-      <p class="muted-line">${pubs.length ? L("cadenceSub") : L("cadenceEmpty")}</p>`;
+      <p class="muted-line">${L("cadenceSub")}</p>`;
   }
 
   function viewDept(id) {
@@ -974,7 +978,7 @@
     closePopovers();
     openState = { onSave, onDelete, returnFocus: document.activeElement };
     inspector.innerHTML = `
-      <div class="insp-head"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-close aria-label="${L("close")}">${icon("close")}</button></div>
+      <div class="insp-head"><h2 id="insp-title">${esc(title)}</h2><button class="icon-btn" type="button" data-close aria-label="${L("close")}">${icon("close")}</button></div>
       <form class="insp-body" id="insp-form" novalidate>${bodyHtml}</form>
       <div class="insp-foot">
         ${onDelete ? `<button class="btn btn-danger" type="button" data-delete>${deleteLabel || t("delete")}</button>` : ""}
@@ -982,18 +986,25 @@
         <button class="btn btn-ghost" type="button" data-close>${t("cancel")}</button>
         <button class="btn" type="submit" form="insp-form">${t("save")}</button>
       </div>`;
+    inspector.setAttribute("role", "dialog");
+    inspector.setAttribute("aria-modal", "true");
+    inspector.setAttribute("aria-labelledby", "insp-title");
     inspector.hidden = false;
     scrim.hidden = false;
-    requestAnimationFrame(() => inspector.querySelector("input, select, textarea")?.focus());
+    // the page behind cannot be reached with Tab or a screen reader while the panel is open
+    [nav, main, foot].forEach((el) => { el.inert = true; });
+    (inspector.querySelector("input, select, textarea") || inspector.querySelector("button"))?.focus({ preventScroll: true });
   }
 
   function closeInspector() {
     if (inspector.hidden) return;
     inspector.hidden = true;
     scrim.hidden = true;
+    [nav, main, foot].forEach((el) => { el.inert = false; });
     const back = openState?.returnFocus;
     openState = null;
-    if (back && document.contains(back)) back.focus();
+    if (back && document.contains(back) && back.offsetParent !== null) back.focus();
+    else main.focus({ preventScroll: true });
   }
 
   const fieldWrap = (label, control, hint = "") =>
@@ -1464,13 +1475,18 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!inspector.hidden) closeInspector();
-    else closePopovers();
+    else {
+      const opener = nav.querySelector('[data-pop][aria-expanded="true"]');
+      closePopovers();
+      opener?.focus();
+    }
   });
 
   store.subscribe(render);
   window.addEventListener("hashchange", () => {
     render();
     window.scrollTo(0, 0);
+    main.focus({ preventScroll: true });
     const lane = main.querySelector("[data-focus]");
     if (lane) lane.scrollIntoView({ block: "start" });
   });

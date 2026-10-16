@@ -130,7 +130,7 @@ window.STUDIO = {
   episodes: [
     {
       id: "kasty-tofu-20l-1", work: "kasty-tofu-20l", n: 1, format: "คลิปรีวิวเห็นเฉพาะสินค้า", title: "", summary: "", stage: "published",
-      date: "", link: "", note: "คลิปหมุนสินค้าให้เห็นรอบด้าน มีเสียงพากย์ชวนซื้อ", updated: "2026-10-15"
+      date: "2026-10-15", link: "", note: "คลิปหมุนสินค้าให้เห็นรอบด้าน มีเสียงพากย์ชวนซื้อ", updated: "2026-10-15"
     }
   ]
 };
