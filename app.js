@@ -178,9 +178,8 @@
 
     nav.innerHTML = `
       <nav class="pillbar" aria-label="Main">
-        <a class="brand" href="#/next"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
+        <a class="brand" href="#/next" aria-label="${esc(S().company.name)} · ${esc(L("upNext"))}"><span class="logo-mark" aria-hidden="true"></span><span>${esc(S().company.name)}</span></a>
         <div class="nav-links" id="nav-links">
-          <a class="nav-link" href="#/next"${cur(r.view === "next")}>${t("upNext")}</a>
           <a class="nav-link" href="#/board"${cur(r.view === "board")}>${t("board")}</a>
           <div style="position:relative">
             <button class="nav-link" type="button" data-pop="depts" aria-expanded="false" aria-controls="pop-depts"${inDept ? ' aria-current="page"' : ""}>${t("departments")}${icon("down")}</button>
@@ -247,7 +246,7 @@
     const open = eps.filter((e) => e.stage !== "published");
     let next;
     if (!total) next = L("flowEmpty");
-    else if (!open.length) next = L("flowAllDone");
+    else if (!open.length) next = "";
     else {
       const lead = open.slice().sort((a, b) => STAGES.indexOf(b.stage) - STAGES.indexOf(a.stage)
         || String(a.updated || "").localeCompare(String(b.updated || "")))[0];
@@ -257,7 +256,7 @@
       <div class="flow" role="group" aria-label="${esc(L("flowAria"))}">
         ${facts ? `<p class="flow-facts">${facts}</p>` : ""}
         <div class="flow-stages">${cells}</div>
-        <p class="flow-next">${next}</p>
+        ${next ? `<p class="flow-next">${next}</p>` : ""}
       </div>`;
   }
 
