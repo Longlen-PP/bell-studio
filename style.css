@@ -367,6 +367,8 @@ button.product-stage .no-photo { color: var(--link); font-size: 19px; }
 /* the five circles as column headers of the board */
 .board-head { --gap: 18px; --r: 44px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--gap); margin-bottom: 26px; }
 .bh-cell { position: relative; display: grid; justify-items: center; min-width: 0; }
+/* on a wide screen the columns are right below, so the circles are just headers; they only act as jump buttons when the columns are stacked */
+@media (min-width: 981px) { .board-head .flow-stage { pointer-events: none; cursor: default; } }
 .bh-link { position: absolute; flex: none; max-width: none; margin: 0; top: calc(var(--r) - 1px); left: calc(50% + var(--r) + 8px); width: calc(100% + var(--gap) - 2 * (var(--r) + 8px)); }
 .board-next { margin: 0 0 22px; text-align: center; }
 .flow-stage.picked .flow-node { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc) 30%, transparent); }
