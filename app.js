@@ -300,10 +300,9 @@
     return `
       <div class="map" role="group" aria-label="${esc(S().company.name)}">
         <svg class="map-svg" viewBox="0 0 1000 520" aria-hidden="true">${nodes.map((x) => x.link).join("")}${nodes.map((x) => x.dots).join("")}</svg>
-        <div class="map-core"><span class="map-pulse"></span><span class="map-pulse late"></span><span class="map-ring"></span><span class="logo-mark" role="img" aria-label="${esc(S().ceo?.name || "Bell")}"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></div>
+        <div class="map-core"><span class="map-orb" aria-hidden="true"></span><span class="logo-mark" role="img" aria-label="${esc(S().ceo?.name || "Bell")}"></span><span class="map-core-label">${esc(S().ceo?.name || "Bell")} · ${esc(S().ceo?.title || "CEO")}</span></div>
         ${nodes.map((x) => x.html).join("")}
-      </div>
-      <p class="map-legend" aria-hidden="true"><span><i style="background: var(--ink)"></i>${L("mapOut")}</span><span><i style="background: var(--st-published)"></i>${L("mapIn")}</span></p>`;
+      </div>`;
   }
 
   function viewNext() {
