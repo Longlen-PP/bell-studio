@@ -10,6 +10,8 @@ window.BELL_I18N = {
     menu: "Menu", close: "Close", langLabel: "Language",
 
     st_idea: "Idea", st_script: "Script", st_producing: "Producing", st_editing: "Editing", st_published: "Published",
+    flowAria: "Where everything stands", flowOpen: "Open {stage} on the Board", flowPub: "<strong>{pub} of {total}</strong> published", flowNext: "Closest to done:",
+    flowEmpty: "Nothing here yet. Start one with + New.", flowAllDone: "Everything here is published.",
     st_active: "Active", st_paused: "Paused",
 
     type_affiliate: "Affiliate", type_series: "Series", type_mv: "Music video", type_story: "Storytelling", type_live: "Live",
@@ -105,6 +107,8 @@ window.BELL_I18N = {
     menu: "เมนู", close: "ปิด", langLabel: "ภาษา",
 
     st_idea: "ไอเดีย", st_script: "เขียนบท", st_producing: "กำลังผลิต", st_editing: "ตัดต่อ", st_published: "ลงแล้ว",
+    flowAria: "สถานะงานทั้งหมด", flowOpen: "ดูขั้น {stage} บน Board", flowPub: "<strong>ลงแล้ว {pub} จาก {total}</strong>", flowNext: "ใกล้เสร็จที่สุด:",
+    flowEmpty: "ยังไม่มีอะไรที่นี่ เริ่มจากปุ่ม + New", flowAllDone: "ลงครบทุกตอนแล้ว",
     st_active: "ใช้งานอยู่", st_paused: "พัก",
 
     type_affiliate: "ขายของ (Affiliate)", type_series: "ซีรีส์ / ละคร", type_mv: "มิวสิกวิดีโอ", type_story: "เล่าเรื่อง", type_live: "ไลฟ์",

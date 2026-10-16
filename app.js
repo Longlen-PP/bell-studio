@@ -205,13 +205,45 @@
           ${lede ? `<p class="lede">${lede}</p>` : ""}
           ${actions ? `<div class="hero-actions">${actions}</div>` : ""}
           ${after}
-          ${stats ? `<div class="stats">${stats.map(([num, label]) => `<div><div class="stat-num">${num}</div><div class="stat-label">${label}</div></div>`).join("")}</div>` : ""}
+          ${typeof stats === "string" ? stats : stats ? `<div class="stats">${stats.map(([num, label]) => `<div><div class="stat-num">${num}</div><div class="stat-label">${label}</div></div>`).join("")}</div>` : ""}
         </div>
       </section>`;
   }
 
   const btn = (label, attrs, kind = "", ic = "plus") =>
     `<button class="btn ${kind}" type="button" ${attrs}>${ic ? icon(ic) : ""}${label}</button>`;
+
+  // ---------- the pipeline strip: one layout on every page, counts the episodes in scope ----------
+  // scope is what the Board filters to when a stage is clicked: "all" | <dept id> | "ch:<id>" | "wk:<id>"
+  const boardFocus = { stage: null };
+  function flowStrip(eps, scope, facts = "") {
+    const counts = STAGES.map((s) => eps.filter((e) => e.stage === s).length);
+    const total = eps.length, pub = counts[STAGES.length - 1];
+    const bar = total
+      ? STAGES.map((s, i) => counts[i] ? `<i class="st-${s}" style="flex:${counts[i]}"></i>` : "").join("")
+      : "";
+    const cells = STAGES.map((s, i) => `
+      <button class="flow-stage st-${s}${counts[i] ? "" : " zero"}" type="button" data-flow-stage="${s}" data-flow-scope="${esc(scope)}" title="${esc(t("flowOpen", { stage: stLabel(s) }))}">
+        <span class="flow-num">${counts[i]}</span>
+        <span class="flow-label"><span class="dot"></span>${stLabel(s)}</span>
+      </button>`).join("");
+    const open = eps.filter((e) => e.stage !== "published");
+    let next;
+    if (!total) next = L("flowEmpty");
+    else if (!open.length) next = L("flowAllDone");
+    else {
+      const lead = open.slice().sort((a, b) => STAGES.indexOf(b.stage) - STAGES.indexOf(a.stage)
+        || String(a.updated || "").localeCompare(String(b.updated || "")))[0];
+      next = `${t("flowPub", { pub, total })} · ${L("flowNext")} <button class="link" type="button" data-edit-ep="${esc(lead.id)}">${esc(epName(typeOfWork(work(lead.work)), lead))}</button> <span class="flow-at">${stLabel(lead.stage)}</span>`;
+    }
+    return `
+      <div class="flow" role="group" aria-label="${esc(L("flowAria"))}">
+        ${facts ? `<p class="flow-facts">${facts}</p>` : ""}
+        <div class="flow-bar" aria-hidden="true">${bar}</div>
+        <div class="flow-stages">${cells}</div>
+        <p class="flow-next">${next}</p>
+      </div>`;
+  }
 
   function epRow(e, { showPath = true } = {}) {
     const w = work(e.work);
@@ -260,7 +292,7 @@
       logo: true,
       title: L("upNext"),
       lede: t("nextLede", { doing: doing.length, ideas: ideas.length, channels: n(S().channels.length, "channel") }),
-      stats: [[ideas.length, L("statIdeas")], [doing.length, L("statInProgress")], [published.length, L("statPublished")]]
+      stats: flowStrip(all, "all")
     }) +
       band(t("secInProgress"), doing.map((e) => epRow(e)), t("emptyInProgress"), { gray: true }) +
       band(t("secIdeas"), ideas.map((e) => epRow(e)), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
@@ -271,14 +303,22 @@
   function viewBoard() {
     let filter = "all";
     try { filter = localStorage.getItem("bellstudio:board") || "all"; } catch { /* ignore */ }
-    if (filter !== "all" && !dept(filter)) filter = "all";
+    const scoped = filter.startsWith("ch:") ? channel(filter.slice(3)) : filter.startsWith("wk:") ? work(filter.slice(3)) : null;
+    if (filter !== "all" && !dept(filter) && !scoped) filter = "all";
     const chips = [`<button class="chip" type="button" data-board-filter="all" aria-pressed="${filter === "all"}">${t("all")}</button>`]
-      .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}">${deptIcon(d.id)}${esc(d.name)}</button>`)).join("");
-    const items = S().episodes.filter((e) => filter === "all" || deptOfWork(work(e.work)) === filter);
+      .concat(S().departments.map((d) => `<button class="chip" type="button" data-board-filter="${esc(d.id)}" aria-pressed="${filter === d.id}">${deptIcon(d.id)}${esc(d.name)}</button>`))
+      .concat(scoped ? [`<button class="chip" type="button" data-board-filter="${esc(filter)}" aria-pressed="true">${esc(scoped.name || scoped.title)}</button>`] : []).join("");
+    const inScope = (e) => filter === "all" ? true
+      : filter.startsWith("ch:") ? work(e.work)?.channel === filter.slice(3)
+      : filter.startsWith("wk:") ? e.work === filter.slice(3)
+      : deptOfWork(work(e.work)) === filter;
+    const items = S().episodes.filter(inScope);
+    const focus = boardFocus.stage;
+    boardFocus.stage = null;
     const lanes = STAGES.map((s) => {
       const cards = items.filter((e) => e.stage === s);
       return `
-        <section aria-label="${stLabel(s)}">
+        <section aria-label="${stLabel(s)}"${focus === s ? " data-focus" : ""} class="st-${s}">
           <div class="lane-head"><span class="status st-${s}"></span><h2>${stLabel(s)}</h2><span class="count num">${cards.length}</span></div>
           <div class="lane">${cards.length ? cards.map((e) => {
             const w = work(e.work), T = typeOfWork(w);
@@ -300,7 +340,7 @@
     const chans = S().channels.filter((c) => c.dept === id);
     const ids = chans.map((c) => c.id);
     const workCount = S().works.filter((w) => ids.includes(w.channel)).length;
-    const published = epCountIn(ids, (e) => e.stage === "published");
+    const deptEps = S().episodes.filter((e) => ids.includes(work(e.work)?.channel));
     const rows = chans.map((c) => {
       const ws = worksOf(c.id);
       const eps = epCountIn([c.id], () => true);
@@ -317,7 +357,7 @@
       title: d.name,
       lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
       actions: btn(L("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),
-      stats: [[chans.length, L("statChannels")], [workCount, L("statWorks")], [published, L("statClipsPublished")]]
+      stats: flowStrip(deptEps, id, `${n(chans.length, "channel")} · ${n(workCount, "work")}`)
     }) +
       band(t("secChannels"), rows, `${t("noChannelYet", { head: d.head.name })} ${t("noChannelHint")}`, { gray: true }) + `
       <section class="band">
@@ -366,7 +406,7 @@
     return hero({
       context, title: c.name, lede: c.concept ? esc(c.concept) : "",
       actions: btn(L("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit"),
-      stats: [[ws.length, L("statWorks")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("statInProgress")], [eps.filter((e) => e.stage === "published").length, L("statClipsPublished")]]
+      stats: flowStrip(eps, "ch:" + id, n(ws.length, "work"))
     }) + `
       <section class="band gray">
         <div class="inner wide">
@@ -420,7 +460,7 @@
       context, title: w.title,
       actions: btn(L("editWork"), `data-edit-work="${esc(w.id)}"`, "btn-outline", "edit"),
       after: stage,
-      stats: [[eps.filter((e) => e.stage === "idea").length, L("wStatIdeas")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("wStatInProgress")], [`${pub}/${total}`, L("wStatPublished")]]
+      stats: flowStrip(eps, "wk:" + id)
     }) +
       band(L("epp_" + T.noun), eps.map((e) => epRow(e, { showPath: false })), t("noEpsHint"), { gray: true }) +
       `<section class="band"><div class="inner"><div class="sec-head"><h2>${t(T.lists.length || w.summary ? "secAbout" : "secDetails")}</h2></div>${about}</div></section>` +
@@ -824,6 +864,12 @@
       store.reset();
       return say(L("toastReset"));
     }
+    if ("flowStage" in ds) {
+      try { localStorage.setItem("bellstudio:board", ds.flowScope || "all"); } catch { /* ignore */ }
+      boardFocus.stage = ds.flowStage;
+      location.hash = "#/board";
+      return;
+    }
     if ("boardFilter" in ds) { try { localStorage.setItem("bellstudio:board", ds.boardFilter); } catch { /* ignore */ } return render(); }
 
     if ("newWork" in ds) return editWork(null, { dept: ds.dept || undefined, channel: ds.newWork || undefined });
@@ -853,6 +899,11 @@
   });
 
   store.subscribe(render);
-  window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+  window.addEventListener("hashchange", () => {
+    render();
+    window.scrollTo(0, 0);
+    const lane = main.querySelector("[data-focus]");
+    if (lane && window.matchMedia("(max-width: 980px)").matches) lane.scrollIntoView({ block: "start" });
+  });
   render();
 })();
