@@ -151,6 +151,7 @@
 
   // ---------- floating bar ----------
   const menuOpen = new Set();
+  let findingsOpen = false;
   function renderNav(r) {
     const cur = (cond) => (cond ? ' aria-current="page"' : "");
     const inDept = ["dept", "channel", "work"].includes(r.view);
@@ -368,6 +369,97 @@
     return hero({ hideTitle: true, title: L("upNext"), after: companyMap() + b.controls }) + b.lanes;
   }
 
+  // ---------- home: results row, weekly goal and the key-findings panel ----------
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  function thisWeek() {
+    const t0 = new Date(store.today() + "T00:00:00"), back = (t0.getDay() + 6) % 7;
+    const start = new Date(t0); start.setDate(t0.getDate() - back);
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    return { from: ymd(start), to: ymd(end) };
+  }
+  // findings are plain arithmetic on what has been typed in; nothing is guessed, and a small sample says so
+  function findings(items, goalInfo) {
+    const out = [];
+    const pubs = items.filter((e) => e.stage === "published");
+    const withData = pubs.filter((e) => numOf(e.cost) != null || numOf(e.stats?.views) != null || numOf(e.stats?.orders) != null);
+    if (withData.length < 3) out.push(t("fLow", { n: withData.length }));
+    const groups = {};
+    pubs.forEach((e) => { if (e.format) (groups[e.format] = groups[e.format] || []).push(e); });
+    const small = (g) => (g.length < 3 ? L("fSmall") : "");
+    const byViews = Object.entries(groups).map(([f, g]) => ({ f, g, v: avgOf(g, (e) => e.stats?.views) })).filter((x) => x.v != null).sort((p, q) => q.v - p.v);
+    if (byViews.length >= 2) out.push(t("fBestViews", { f: byViews[0].f, v: showNum(byViews[0].v), k: byViews[0].g.length, small: small(byViews[0].g) }));
+    const byCost = Object.entries(groups).map(([f, g]) => {
+      const orders = sumOf(g, (e) => e.stats?.orders), costed = g.filter((e) => numOf(e.cost) != null);
+      return { f, g, v: orders > 0 && costed.length ? sumOf(costed, (e) => e.cost) / orders : null };
+    }).filter((x) => x.v != null).sort((p, q) => p.v - q.v);
+    if (byCost.length >= 2) out.push(t("fBestCost", { f: byCost[0].f, c: showBaht(byCost[0].v), k: byCost[0].g.length, small: small(byCost[0].g) }));
+    const spend = sumOf(items.filter((e) => numOf(e.cost) != null), (e) => e.cost);
+    const orders = sumOf(pubs, (e) => e.stats?.orders), views = sumOf(pubs, (e) => e.stats?.views);
+    if (spend > 0 && orders > 0) out.push(t("fCostOrder", { c: showBaht(spend / orders) }));
+    if (spend > 0 && views > 0) out.push(t("fCostView", { c: showBaht(spend / views * 1000) }));
+    const dated = pubs.filter((e) => e.date).map((e) => e.date).sort();
+    if (dated.length) {
+      const days = ageOf({ updated: dated[dated.length - 1] });
+      if (days >= 3) out.push(t("fCadence", { n: days }));
+    }
+    const quiet = items.filter(isIdle).length;
+    if (quiet) out.push(t("fQuiet", { n: quiet, d: IDLE_DAYS }));
+    const noDate = pubs.filter((e) => !e.date).length;
+    if (goalInfo && noDate) out.push(t("fNoDate", { n: noDate }));
+    return out.length ? out : [L("fNone")];
+  }
+  function homeStats(items, filter) {
+    const pubs = items.filter((e) => e.stage === "published");
+    const spend = countOf(items, (e) => e.cost) ? sumOf(items, (e) => e.cost) : null;
+    const views = countOf(pubs, (e) => e.stats?.views) ? sumOf(pubs, (e) => e.stats?.views) : null;
+    const orders = countOf(pubs, (e) => e.stats?.orders) ? sumOf(pubs, (e) => e.stats?.orders) : null;
+    const costPub = avgOf(pubs, (e) => e.cost);
+    const tile = (v, label) => `<div class="kpi"><div class="kpi-num">${v}</div><div class="kpi-label">${label}</div></div>`;
+    const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(views), L("kpiViews"))}${tile(showNum(orders), L("kpiOrders"))}${tile(showBaht(costPub), L("kpiAvgCost"))}</div>`;
+
+    // weekly goal: the department's own goal, or the sum over departments that have one
+    const scopedDept = filter === "all" || dept(filter);
+    const goalDepts = scopedDept ? S().departments.filter((d) => (filter === "all" || d.id === filter) && +d.weeklyGoal > 0) : [];
+    const wk = thisWeek();
+    const inWeek = (e) => e.stage === "published" && e.date && e.date >= wk.from && e.date <= wk.to;
+    let goalHtml = "";
+    let goalInfo = null;
+    if (goalDepts.length) {
+      const per = goalDepts.map((d) => ({ d, goal: +d.weeklyGoal, pub: items.filter((e) => inWeek(e) && deptOfWork(work(e.work)) === d.id).length }));
+      const goal = per.reduce((n, p) => n + p.goal, 0), done = per.reduce((n, p) => n + Math.min(p.pub, p.goal), 0), pubN = per.reduce((n, p) => n + p.pub, 0);
+      goalInfo = { goal, pub: pubN };
+      const pips = goal <= 12
+        ? Array.from({ length: goal }, (_, k) => `<i class="${k < pubN ? "f" : ""}"></i>`).join("")
+        : `<i class="f" style="flex:${Math.min(pubN, goal)}"></i><i style="flex:${Math.max(goal - pubN, 0)}"></i>`;
+      const detail = filter === "all" && per.length > 1
+        ? `<div class="goal-depts">${per.map((p) => `<span style="--c: var(--d-${esc(p.d.id)})"><i></i>${esc(p.d.name)} ${p.pub}/${p.goal}</span>`).join("")}</div>` : "";
+      goalHtml = `<div class="goal"><div class="goal-top"><span>${t("goalTitle", { pub: pubN, goal })}</span><span class="goal-left">${pubN >= goal ? L("goalDone") : t("goalLeft", { n: goal - pubN })}</span></div><div class="goal-track">${pips}</div>${detail}</div>`;
+      void done;
+    } else if (dept(filter)) {
+      goalHtml = `<p class="goal-set"><button class="link" type="button" data-edit-dept="${esc(filter)}">${L("goalSet")}</button></p>`;
+    }
+
+    // key findings: only on request
+    const toggle = `<p class="find-toggle"><button class="btn btn-outline" type="button" data-findings-toggle aria-expanded="${findingsOpen}">${icon("chev", "icon chev")}${L(findingsOpen ? "findHide" : "findBtn")}</button></p>`;
+    let panel = "";
+    if (findingsOpen) {
+      const list = findings(items, goalInfo).map((f) => `<li>${f}</li>`).join("");
+      const news = window.STUDIO_NEWS || { items: [], updated: "" };
+      const picks = (news.items || []).filter((n) => filter === "all" ? true : (n.dept === filter || n.dept === "all"));
+      const newsHtml = picks.length ? picks.map((n) => `
+        <article class="news">
+          <h4>${esc(n.title)}</h4>
+          <p>${esc(n.summary)}</p>
+          <p class="news-meta"><span class="tag">${esc(L(n.trust === "official" ? "trustOfficial" : "trustSecondary"))}</span>${n.date ? `<span>${esc(n.date)}</span>` : ""}<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.source)} · ${L("readSource")}</a></p>
+        </article>`).join("") : `<p class="muted">${L("newsEmpty")}</p>`;
+      panel = `<div class="findings">
+        <div class="find-col"><h3>${L("findHead")}</h3><ul class="find-list">${list}</ul><p class="muted">${L("findExport")}</p></div>
+        <div class="find-col"><h3>${L("findNewsHead")}</h3><p class="muted">${t("findNewsNote", { date: news.updated || "-" })}</p>${newsHtml}</div>
+      </div>`;
+    }
+    return `<div class="home-stats">${kpis}${goalHtml}${toggle}${panel}</div>`;
+  }
+
   // the controls (department bar) and the five lanes; the home page puts them under the company map
   function boardParts() {
     let filter = "all";
@@ -434,7 +526,7 @@
     const nextLine = flowNextLine(items);
     const pageLink = dept(filter) ? `<p class="deptlink"><a href="#/dept/${esc(filter)}">${t("openDept", { name: dept(filter).name })}${icon("chev", "icon chev")}</a></p>` : "";
     return {
-      controls: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}${pageLink}`,
+      controls: `<div class="deptbar-wrap"><div class="deptbar" role="group" aria-label="${esc(L("departments"))}"><span class="deptbar-ind" aria-hidden="true"></span>${tabs}</div></div>${quiet}${pageLink}${homeStats(items, filter)}`,
       lanes: `<section class="band gray"><div class="inner wide">
         ${nextLine ? `<p class="flow-next board-next">${nextLine}</p>` : ""}
         <div class="board-head" role="group" aria-label="${esc(L("flowAria"))}">${heads}</div>
@@ -1027,6 +1119,7 @@
     const d = dept(id);
     const body =
       fieldWrap(L("f_mission"), textarea("mission", d.mission)) +
+      fieldWrap(L("f_goal"), input("goal", d.weeklyGoal || "", 'type="number" min="0" inputmode="numeric"'), L("f_goalHint")) +
       fieldWrap(L("f_platforms"), textarea("platforms", (d.platforms || []).join("\n"), 'style="min-height:72px"'), L("f_platformsHint")) +
       fieldWrap(L("f_team"), textarea("roles", d.roles.map((r) => `${r.title} — ${r.duty}`).join("\n")), L("f_teamHint")) +
       fieldWrap(L("f_rules"), textarea("rules", d.rules.join("\n")), L("f_rulesHint")) +
@@ -1037,6 +1130,7 @@
         commit((s) => {
           const tgt = s.departments.find((x) => x.id === id);
           tgt.mission = form.elements.mission.value.trim();
+          tgt.weeklyGoal = Math.max(0, parseInt(form.elements.goal.value, 10) || 0);
           tgt.roles = lines("roles").map((l) => { const [title, ...rest] = l.split(/\s+[—-]\s+/); return { title: title.trim(), duty: rest.join(" — ").trim() }; });
           tgt.rules = lines("rules");
           tgt.platforms = lines("platforms");
@@ -1099,6 +1193,7 @@
       location.hash = "#/next";
       return;
     }
+    if ("findingsToggle" in ds) { findingsOpen = !findingsOpen; return render(); }
     if ("laneFocus" in ds) {
       boardFocus.stage = boardFocus.stage === ds.laneFocus ? null : ds.laneFocus;
       render();
