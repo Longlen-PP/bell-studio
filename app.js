@@ -140,13 +140,15 @@
       <button type="button" data-export>${t("export")}</button><button type="button" data-reset>${t("reset")}</button></span></div>`;
   }
 
-  function hero({ logo = false, context = "", title, lede = "", actions = "", stats = null, after = "" }) {
+  function hero({ logo = false, titleLogo = "", context = "", title, lede = "", actions = "", stats = null, after = "" }) {
     return `
       <section class="band hero">
         <div class="inner">
           ${logo ? `<span class="logo-full" role="img" aria-label="${esc(S().company.name)}"></span>` : ""}
           ${context ? `<div class="context">${context}</div>` : ""}
-          <h1>${esc(title)}</h1>
+          ${titleLogo && BRAND_ICONS.includes(titleLogo)
+            ? `<h1 class="logo-title"><span class="brand-icon big bi-${esc(titleLogo)}" aria-hidden="true"></span><span class="visually-hidden">${esc(title)}</span></h1>`
+            : `<h1>${esc(title)}</h1>`}
           ${lede ? `<p class="lede">${lede}</p>` : ""}
           ${actions ? `<div class="hero-actions">${actions}</div>` : ""}
           ${after}
@@ -245,7 +247,8 @@
         </a>`;
     });
     return hero({
-      context: `${deptIcon(id)}${esc(d.head.name)}`,
+      context: esc(d.head.name),
+      titleLogo: id,
       title: d.name,
       lede: `${esc(d.head.persona)} — <strong>${esc(d.mission)}</strong>`,
       actions: btn(t("editDept"), `data-edit-dept="${esc(id)}"`, "btn-outline", "edit"),

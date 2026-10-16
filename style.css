@@ -131,6 +131,9 @@ a.row, a.tile, a.nav-link, a.menu-link, a.brand { color: var(--ink); text-decora
 .menu-link .brand-icon, .row .brand-icon { width: 20px; height: 20px; }
 .chip .brand-icon { width: 16px; height: 16px; }
 .context .brand-icon { width: 24px; height: 24px; }
+/* department page: the platform logo is the headline (the name stays in the page for screen readers and the tab title) */
+.hero h1.logo-title { display: flex; justify-content: center; font-size: 0; line-height: 0; margin: 6px 0 4px; }
+.brand-icon.big { width: clamp(84px, 11vw, 132px); height: clamp(84px, 11vw, 132px); }
 
 /* ---------- ribbon (local edits) ---------- */
 .ribbon { margin-top: -68px; padding: 84px 16px 14px; background: var(--gray); text-align: center; font-size: 14px; color: var(--ink-2); }
