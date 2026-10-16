@@ -260,7 +260,7 @@
       logo: true,
       title: L("upNext"),
       lede: t("nextLede", { doing: doing.length, ideas: ideas.length, channels: n(S().channels.length, "channel") }),
-      stats: [[doing.length, L("statInProgress")], [ideas.length, L("statIdeas")], [published.length, L("statPublished")]]
+      stats: [[ideas.length, L("statIdeas")], [doing.length, L("statInProgress")], [published.length, L("statPublished")]]
     }) +
       band(t("secInProgress"), doing.map((e) => epRow(e)), t("emptyInProgress"), { gray: true }) +
       band(t("secIdeas"), ideas.map((e) => epRow(e)), hasCh ? t("emptyIdeas") : t("emptyNoChannels")) +
@@ -366,7 +366,7 @@
     return hero({
       context, title: c.name, lede: c.concept ? esc(c.concept) : "",
       actions: btn(L("editChannel"), `data-edit-channel="${esc(id)}"`, "btn-outline", "edit"),
-      stats: [[ws.length, L("statWorks")], [eps.filter((e) => e.stage === "published").length, L("statClipsPublished")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("statInProgress")]]
+      stats: [[ws.length, L("statWorks")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("statInProgress")], [eps.filter((e) => e.stage === "published").length, L("statClipsPublished")]]
     }) + `
       <section class="band gray">
         <div class="inner wide">
@@ -420,7 +420,7 @@
       context, title: w.title,
       actions: btn(L("editWork"), `data-edit-work="${esc(w.id)}"`, "btn-outline", "edit"),
       after: stage,
-      stats: [[`${pub}/${total}`, L("wStatPublished")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("wStatInProgress")], [eps.filter((e) => e.stage === "idea").length, L("wStatIdeas")]]
+      stats: [[eps.filter((e) => e.stage === "idea").length, L("wStatIdeas")], [eps.filter((e) => IN_PROGRESS.includes(e.stage)).length, L("wStatInProgress")], [`${pub}/${total}`, L("wStatPublished")]]
     }) +
       band(L("epp_" + T.noun), eps.map((e) => epRow(e, { showPath: false })), t("noEpsHint"), { gray: true }) +
       `<section class="band"><div class="inner"><div class="sec-head"><h2>${t(T.lists.length || w.summary ? "secAbout" : "secDetails")}</h2></div>${about}</div></section>` +
