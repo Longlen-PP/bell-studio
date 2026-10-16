@@ -443,7 +443,18 @@
     const orders = countOf(pubs, (e) => e.stats?.orders) ? sumOf(pubs, (e) => e.stats?.orders) : null;
     const costPub = avgOf(pubs, (e) => e.cost);
     const tile = (v, label) => `<div class="kpi"><div class="kpi-num">${v}</div><div class="kpi-label">${label}</div></div>`;
-    const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(views), L("kpiViews"))}${tile(showNum(orders), L("kpiOrders"))}${tile(showBaht(costPub), L("kpiAvgCost"))}</div>`;
+    const scopeChans = filter === "all" ? S().channels
+      : dept(filter) ? S().channels.filter((c) => c.dept === filter)
+      : filter.startsWith("ch:") ? [channel(filter.slice(3))].filter(Boolean)
+      : [channel(work(filter.slice(3))?.channel)].filter(Boolean);
+    const kind = kindsOf(scopeChans.map((c) => c.type));
+    const followers = countOf(pubs, (e) => e.stats?.followers) ? sumOf(pubs, (e) => e.stats?.followers) : null;
+    const watchAvg = avgOf(pubs, (e) => e.stats?.watch);
+    const watchTxt = watchAvg == null ? "—" : `${showNum(watchAvg)} ${L("unitSec")}`;
+    const tail = kind.sell && kind.content ? tile(showNum(orders), L("kpiOrders")) + tile(showNum(followers), L("kpiFollowers"))
+      : kind.sell ? tile(showNum(orders), L("kpiOrders")) + tile(showBaht(costPub), L("kpiAvgCost"))
+      : tile(showNum(followers), L("kpiFollowers")) + tile(watchTxt, L("kpiWatch"));
+    const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(views), L("kpiViews"))}${tail}</div>`;
 
     // weekly goal: the department's own goal, or the sum over departments that have one
     const scopedDept = filter === "all" || dept(filter);
@@ -564,7 +575,12 @@
   }
 
   // ---------- cost and results (v1.0): tables for a set of episodes ----------
-  const STAT_KEYS = ["views", "likes", "comments", "shares", "saves", "orders"];
+  // results depend on the kind of channel: selling channels count orders, content channels count followers and watch time
+  const STAT_KEYS = ["views", "likes", "comments", "shares", "saves", "orders", "followers", "watch"];
+  const SELL_TYPES = ["affiliate", "live"];
+  const statApplies = (k, type) => (k === "orders" ? SELL_TYPES.includes(type) : (k === "followers" || k === "watch") ? !SELL_TYPES.includes(type) : true);
+  const typeOfEp = (e) => channel(work(e.work)?.channel)?.type;
+  const kindsOf = (types) => { const sell = types.some((t0) => SELL_TYPES.includes(t0)), content = types.some((t0) => !SELL_TYPES.includes(t0)); return sell || content ? { sell, content } : { sell: true, content: true }; };
   const numOf = (v) => (v === "" || v == null || isNaN(+v) ? null : +v);
   const nf = () => new Intl.NumberFormat(lang === "th" ? "th-TH" : "en-US", { maximumFractionDigits: 0 });
   const showNum = (v) => (v == null ? "—" : nf().format(v));
@@ -577,6 +593,7 @@
     const spend = countOf(eps, (e) => e.cost) ? sumOf(eps, (e) => e.cost) : null;
     const views = countOf(pubs, (e) => e.stats?.views) ? sumOf(pubs, (e) => e.stats?.views) : null;
     const costPub = avgOf(pubs, (e) => e.cost);
+    const kind = kindsOf(eps.map(typeOfEp));
     const tile = (v, label) => `<div class="kpi"><div class="kpi-num">${v}</div><div class="kpi-label">${label}</div></div>`;
     const kpis = `<div class="kpis">${tile(showBaht(spend), L("kpiSpend"))}${tile(showNum(pubs.length), L("kpiClips"))}${tile(showBaht(costPub), L("kpiAvgCost"))}${tile(showNum(views), L("kpiViews"))}</div>`;
     const head = (cols) => `<thead><tr>${cols.map(([k, num]) => `<th${num ? ' class="n"' : ""}>${L(k)}</th>`).join("")}</tr></thead>`;
@@ -589,15 +606,15 @@
         <td class="n">${numOf(e.length) != null ? showNum(+e.length) + "s" : "—"}</td>
         <td class="n">${showBaht(numOf(e.cost))}</td>
         <td class="n">${showNum(numOf(e.stats?.views))}</td>
-        <td class="n">${showNum(numOf(e.stats?.orders))}</td>
+        ${kind.sell ? `<td class="n">${showNum(numOf(e.stats?.orders))}</td>` : ""}${kind.content ? `<td class="n">${showNum(numOf(e.stats?.followers))}</td><td class="n">${numOf(e.stats?.watch) != null ? showNum(+e.stats.watch) + L("unitSec") : "—"}</td>` : ""}
       </tr>`;
     }).join("");
     const totalRow = pubs.length ? `<tr class="total"><td>${L("tTotal")}</td><td></td><td></td><td></td>
         <td class="n">${showBaht(countOf(pubs, (e) => e.cost) ? sumOf(pubs, (e) => e.cost) : null)}</td>
         <td class="n">${showNum(views)}</td>
-        <td class="n">${showNum(countOf(pubs, (e) => e.stats?.orders) ? sumOf(pubs, (e) => e.stats?.orders) : null)}</td></tr>` : "";
+        ${kind.sell ? `<td class="n">${showNum(countOf(pubs, (e) => e.stats?.orders) ? sumOf(pubs, (e) => e.stats?.orders) : null)}</td>` : ""}${kind.content ? `<td class="n">${showNum(countOf(pubs, (e) => e.stats?.followers) ? sumOf(pubs, (e) => e.stats?.followers) : null)}</td><td class="n">${avgOf(pubs, (e) => e.stats?.watch) != null ? showNum(avgOf(pubs, (e) => e.stats?.watch)) + L("unitSec") : "—"}</td>` : ""}</tr>` : "";
     const clipsTable = pubs.length
-      ? `<div class="tbl"><table>${head([["tClip"], ["tProduct"], ["tPosted"], ["tLength", 1], ["tCost", 1], ["tViews", 1], ["tOrders", 1]])}<tbody>${clipRows}${totalRow}</tbody></table></div>`
+      ? `<div class="tbl"><table>${head([["tClip"], ["tProduct"], ["tPosted"], ["tLength", 1], ["tCost", 1], ["tViews", 1]].concat(kind.sell ? [["tOrders", 1]] : [], kind.content ? [["tFollowers", 1], ["tWatch", 1]] : []))}<tbody>${clipRows}${totalRow}</tbody></table></div>`
       : `<div class="list"><div class="empty">${L("noClipsYet")}</div></div>`;
     const first = `
       <section class="band">
@@ -613,13 +630,13 @@
     pubs.forEach((e) => { (groups[e.format || ""] = groups[e.format || ""] || []).push(e); });
     const fmtRows = Object.keys(groups).map((k) => {
       const g = groups[k];
-      return `<tr><td>${esc(k || L("tNoFormat"))}</td><td class="n">${showNum(g.length)}</td><td class="n">${showBaht(avgOf(g, (e) => e.cost))}</td><td class="n">${showNum(avgOf(g, (e) => e.stats?.views))}</td><td class="n">${showNum(countOf(g, (e) => e.stats?.orders) ? sumOf(g, (e) => e.stats?.orders) : null)}</td></tr>`;
+      return `<tr><td>${esc(k || L("tNoFormat"))}</td><td class="n">${showNum(g.length)}</td><td class="n">${showBaht(avgOf(g, (e) => e.cost))}</td><td class="n">${showNum(avgOf(g, (e) => e.stats?.views))}</td>${kind.sell ? `<td class="n">${showNum(countOf(g, (e) => e.stats?.orders) ? sumOf(g, (e) => e.stats?.orders) : null)}</td>` : ""}${kind.content ? `<td class="n">${showNum(countOf(g, (e) => e.stats?.followers) ? sumOf(g, (e) => e.stats?.followers) : null)}</td>` : ""}</tr>`;
     }).join("");
     const second = pubs.length ? `
       <section class="band gray">
         <div class="inner wide">
           <div class="sec-head"><h2>${L("secFormats")}</h2></div>
-          <div class="tbl"><table>${head([["tFormat"], ["tClips", 1], ["tAvgCost", 1], ["tAvgViews", 1], ["tOrders", 1]])}<tbody>${fmtRows}</tbody></table></div>
+          <div class="tbl"><table>${head([["tFormat"], ["tClips", 1], ["tAvgCost", 1], ["tAvgViews", 1]].concat(kind.sell ? [["tOrders", 1]] : [], kind.content ? [["tFollowers", 1]] : []))}<tbody>${fmtRows}</tbody></table></div>
         </div>
       </section>` : "";
     return first + second;
@@ -1068,7 +1085,7 @@
       `<details class="more"${e.cost || e.length || e.engine || Object.keys(e.stats || {}).length ? " open" : ""}><summary>${L("secProd")}</summary><div class="more-body">` +
         `<div class="two">${fieldWrap(L("e_length"), input("dur", e.length ?? "", 'type="number" min="0" inputmode="numeric"'))}${fieldWrap(L("e_cost"), input("cost", e.cost ?? "", 'type="number" min="0" step="any" inputmode="decimal"'), esc(L("e_costHint")))}</div>` +
         fieldWrap(L("e_engine"), input("engine", e.engine || "", 'autocomplete="off"')) +
-        `<div class="three">${STAT_KEYS.map((k) => fieldWrap(L("s_" + k), input("s_" + k, e.stats?.[k] ?? "", 'type="number" min="0" inputmode="numeric"'))).join("")}</div>` +
+        `<div class="three">${STAT_KEYS.map((k) => `<div class="stat" data-stat="${k}"${statApplies(k, typeOfEp(e)) ? "" : " hidden"}>${fieldWrap(L("s_" + k), input("s_" + k, e.stats?.[k] ?? "", 'type="number" min="0" inputmode="numeric"'))}</div>`).join("")}</div>` +
         fieldWrap(L("e_statsAt"), input("statsAt", e.statsAt || "", 'type="date"'), esc(L("e_resultsHint"))) +
       `</div></details>` +
       fieldWrap(L("f_note"), textarea("note", e.note, `placeholder="${esc(L("f_notePh"))}"`));
@@ -1098,6 +1115,11 @@
       onDelete: isNew ? null : () => commit((s) => { s.episodes = s.episodes.filter((x) => x.id !== id); }, "toastEpDeleted")
     });
     const form = $("insp-form");
+    // the result fields follow the kind of channel the clip belongs to (typed values stay in the hidden ones)
+    form.elements.work.addEventListener("change", () => {
+      const ty = channel(work(form.elements.work.value)?.channel)?.type;
+      form.querySelectorAll(".stat").forEach((el) => { el.hidden = !statApplies(el.dataset.stat, ty); });
+    });
     form.elements.work.addEventListener("change", () => {
       $("fmt-list").innerHTML = formatChoices(form.elements.work.value).map((x) => `<option value="${esc(x)}">`).join("");
     });
