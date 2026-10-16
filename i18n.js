@@ -80,7 +80,7 @@ window.BELL_I18N = {
     secProd: "Production and results", e_length: "Length (seconds)", e_engine: "Made with", e_cost: "Cost (฿)", e_costHint: "Credits or fees spent on this clip, in baht.", e_statsAt: "Results as of", e_resultsHint: "Fill in whatever you have. Empty stays empty.",
     s_views: "Views", s_likes: "Likes", s_comments: "Comments", s_shares: "Shares", s_saves: "Saves", s_orders: "Orders",
     railAgo: "{n} days since the last update", railToday: "updated today", railMore: "+{n} more", railIdle: "{n} quiet for {d}+ days",
-    crewWork: "On it · {n}", crewSleep: "No channel yet", crewCheer: "Just shipped", crewWorry: "{n} gone quiet", crewWait: "Ready",
+    crewWork: "On it · {n}", crewSleep: "No channel yet", crewCheer: "Clip just posted", crewWorry: "{n} gone quiet", crewWait: "Ready",
     firstClip: "First clip",
     showMore: "Show {n} more", showLess: "Show less",
     f_code: "Code", f_codeHint: "2-5 letters or digits, used in every code under this channel. Changing it renames them all.", errCode: "Use 2-5 letters or digits that no other channel in this department uses.",

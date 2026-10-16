@@ -364,41 +364,59 @@
     shopee: { hair: "short", hc: "#2b2b2b", skin: "#e5b78f", cap: true },
     bell: { hair: "bob", hc: "#1f1f1f", skin: "#ffdcc3", headset: true }
   };
+  // mix a #hex colour toward white (amt > 0) or black (amt < 0)
+  const shade = (hex, amt) => {
+    const n = parseInt(hex.slice(1), 16), to = amt < 0 ? 0 : 255, p = Math.abs(amt);
+    const ch = (v) => Math.round(v + (to - v) * p);
+    return `rgb(${ch(n >> 16)}, ${ch((n >> 8) & 255)}, ${ch(n & 255)})`;
+  };
+  // soft 3D-toy look: shaded skin, glossy big eyes, rim-lit hair, rounded body with a gradient
   function crewSvg(id, pose, color) {
     const k = CREW_LOOK[id] || CREW_LOOK.bell;
-    const back = k.hair === "long" ? `<path d="M52 60 q0 -36 28 -36 q28 0 28 36 v40 q-14 8 -28 0 q-14 8 -28 0z" fill="${k.hc}"/>`
-      : k.hair === "bob" ? `<path d="M53 62 q0 -38 27 -38 q27 0 27 38 v12 q-27 8 -54 0z" fill="${k.hc}"/>` : "";
+    const u = `${id}-${pose}`;
+    const defs = `<defs>
+      <radialGradient id="sk-${u}" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="${shade(k.skin, .35)}"/><stop offset=".55" stop-color="${k.skin}"/><stop offset="1" stop-color="${shade(k.skin, -.14)}"/></radialGradient>
+      <linearGradient id="hr-${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${shade(k.hc, .3)}"/><stop offset=".5" stop-color="${k.hc}"/><stop offset="1" stop-color="${shade(k.hc, -.25)}"/></linearGradient>
+      <linearGradient id="bd-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb, ${color} 72%, #fff)"/><stop offset=".55" style="stop-color:${color}"/><stop offset="1" style="stop-color:color-mix(in srgb, ${color} 82%, #000)"/></linearGradient>
+      <radialGradient id="ck-${u}"><stop offset="0" stop-color="#ff7a8a" stop-opacity=".75"/><stop offset="1" stop-color="#ff7a8a" stop-opacity="0"/></radialGradient>
+    </defs>`;
+    const hair = `url(#hr-${u})`, skin = `url(#sk-${u})`, body = `url(#bd-${u})`;
+    const back = k.hair === "long" ? `<path d="M50 62 q0 -40 30 -40 q30 0 30 40 v40 q-15 9 -30 0 q-15 9 -30 0z" fill="${hair}"/>`
+      : k.hair === "bob" ? `<path d="M51 64 q0 -42 29 -42 q29 0 29 42 v12 q-29 9 -58 0z" fill="${hair}"/>` : "";
     const front = k.hair === "short"
-      ? `<path d="M54 56 q0 -32 26 -32 q26 0 26 32 q-10 -14 -26 -14 q-16 0 -26 14z" fill="${k.hc}"/>`
-      : `<path d="M54 56 q26 -32 52 0 q-8 -12 -26 -12 q-18 0 -26 12z" fill="${k.hc}"/>`;
-    const extra = (k.crown ? `<path d="M68 32 l6 -11 l6 8 l6 -8 l6 11z" fill="#ffcc33"/>` : "")
-      + (k.cap ? `<path d="M54 46 q26 -28 52 0z" fill="${color}"/><rect x="54" y="44" width="70" height="6" rx="3" fill="${color}"/>` : "")
-      + (k.headset ? `<path d="M54 58 q0 -34 26 -34 q26 0 26 34" fill="none" stroke="#333" stroke-width="4"/><circle cx="54" cy="62" r="6" fill="#333"/><path d="M54 68 q4 14 22 14" fill="none" stroke="#333" stroke-width="2.5"/>` : "");
-    const eyes = pose === "sleep" ? `<path d="M64 61 q5 4 10 0 M86 61 q5 4 10 0" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"/>`
-      : pose === "cheer" ? `<path d="M64 62 q5 -6 10 0 M86 62 q5 -6 10 0" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"/>`
-      : `<g class="eyes"><circle cx="69" cy="60" r="3.4" fill="#222"/><circle cx="91" cy="60" r="3.4" fill="#222"/><circle cx="70" cy="58.8" r="1.1" fill="#fff"/><circle cx="92" cy="58.8" r="1.1" fill="#fff"/></g>`
-        + (pose === "worry" ? `<path d="M63 51 l11 3 M97 51 l-11 3" stroke="#222" stroke-width="2" stroke-linecap="round"/>` : "");
-    const mouth = pose === "sleep" ? `<ellipse cx="80" cy="72" rx="3" ry="2.4" fill="#c97b7b"/>`
-      : pose === "cheer" ? `<path d="M73 69 q7 10 14 0z" fill="#c0504d"/>`
-      : pose === "worry" ? `<path d="M74 72 q3 -3 6 0 q3 3 6 0" fill="none" stroke="#a24" stroke-width="2" stroke-linecap="round"/>`
-      : `<path d="M74 69 q6 5 12 0" fill="none" stroke="#a24" stroke-width="2.2" stroke-linecap="round"/>`;
-    const fx = pose === "sleep" ? `<g class="zs"><text x="104" y="40">z</text><text x="114" y="28">z</text><text x="124" y="16">Z</text></g>`
-      : pose === "cheer" ? `<g class="stars"><path d="M26 34 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M130 30 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z"/></g>`
-      : pose === "worry" ? `<path class="sweat" d="M108 44 q-5 8 0 12 q5 -4 0 -12z"/>` : "";
-    return `<svg class="crew-svg pose-${pose}" viewBox="0 0 160 150" aria-hidden="true">
-      <ellipse cx="80" cy="141" rx="56" ry="6" fill="rgba(0,0,0,.14)"/>
-      <rect x="52" y="84" width="56" height="46" rx="18" fill="${color}"/>
+      ? `<path d="M52 56 q0 -34 28 -34 q28 0 28 34 q-10 -15 -28 -15 q-18 0 -28 15z" fill="${hair}"/>`
+      : `<path d="M52 56 q28 -34 56 0 q-9 -13 -28 -13 q-19 0 -28 13z" fill="${hair}"/>`;
+    const shine = `<path d="M62 33 q10 -7 22 -4" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="3.4" stroke-linecap="round"/>`;
+    const extra = (k.crown ? `<path d="M67 32 l6 -12 l7 9 l7 -9 l6 12z" fill="#ffcc33" stroke="#e6a800" stroke-width="1"/>` : "")
+      + (k.cap ? `<path d="M52 44 q28 -30 56 0z" fill="${color}"/><rect x="52" y="42" width="72" height="7" rx="3.5" fill="${shade("#ff6a00", -.12)}"/>` : "")
+      + (k.headset ? `<path d="M52 58 q0 -36 28 -36 q28 0 28 36" fill="none" stroke="#2c2c34" stroke-width="4.2"/><circle cx="52" cy="62" r="6.5" fill="#2c2c34"/><path d="M52 69 q4 15 24 15" fill="none" stroke="#2c2c34" stroke-width="2.6"/><circle cx="77" cy="84" r="3" fill="#2c2c34"/>` : "");
+    const eye = (cx) => `<g class="eye"><ellipse cx="${cx}" cy="60" rx="6" ry="6.8" fill="#fff"/><circle cx="${cx}" cy="61" r="4.4" fill="#3a2a22"/><circle cx="${cx}" cy="61" r="2.2" fill="#14100e"/><circle cx="${cx + 1.8}" cy="58.6" r="1.7" fill="#fff"/><circle cx="${cx - 1.6}" cy="63" r=".8" fill="#fff" opacity=".8"/></g>`;
+    const eyes = pose === "sleep" ? `<path d="M63 61 q6 5 12 0 M85 61 q6 5 12 0" fill="none" stroke="#2b2220" stroke-width="2.6" stroke-linecap="round"/>`
+      : pose === "cheer" ? `<path d="M63 63 q6 -8 12 0 M85 63 q6 -8 12 0" fill="none" stroke="#2b2220" stroke-width="2.8" stroke-linecap="round"/>`
+      : `<g class="eyes">${eye(69)}${eye(91)}</g>` + (pose === "worry" ? `<path d="M62 50 l13 4 M98 50 l-13 4" stroke="#2b2220" stroke-width="2.2" stroke-linecap="round"/>` : "");
+    const mouth = pose === "sleep" ? `<ellipse cx="80" cy="73" rx="3" ry="2.5" fill="#c97b7b"/>`
+      : pose === "cheer" ? `<path d="M72 70 q8 11 16 0z" fill="#c0504d"/><path d="M75 73 q5 3 10 0" fill="#ff8a8a"/>`
+      : pose === "worry" ? `<path d="M74 73 q3 -3 6 0 q3 3 6 0" fill="none" stroke="#a23a4a" stroke-width="2.2" stroke-linecap="round"/>`
+      : `<path d="M73 70 q7 6 14 0" fill="none" stroke="#a23a4a" stroke-width="2.4" stroke-linecap="round"/>`;
+    const fx = pose === "sleep" ? `<g class="zs"><text x="106" y="40">z</text><text x="116" y="28">z</text><text x="126" y="16">Z</text></g>`
+      : pose === "cheer" ? `<g class="stars"><path d="M26 34 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M132 30 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z"/></g>`
+      : pose === "worry" ? `<path class="sweat" d="M110 44 q-5 8 0 12 q5 -4 0 -12z"/>` : "";
+    return `<svg class="crew-svg pose-${pose}" viewBox="0 0 160 150" aria-hidden="true">${defs}
+      <ellipse cx="80" cy="141" rx="58" ry="6.5" fill="rgba(0,0,0,.16)"/>
+      <rect x="50" y="84" width="60" height="48" rx="20" fill="${body}"/>
+      <ellipse cx="80" cy="88" rx="16" ry="5" fill="rgba(0,0,0,.14)"/>
       ${back}
       <g class="head">
-        <circle cx="80" cy="58" r="26" fill="${k.skin}"/>
-        ${front}${extra}
-        ${eyes}<circle cx="63" cy="68" r="4" fill="#ff9aa2" opacity=".55"/><circle cx="97" cy="68" r="4" fill="#ff9aa2" opacity=".55"/>${mouth}
+        <circle cx="80" cy="58" r="28" fill="${skin}"/>
+        ${front}${shine}${extra}
+        <ellipse cx="62" cy="69" rx="7.5" ry="5" fill="url(#ck-${u})"/><ellipse cx="98" cy="69" rx="7.5" ry="5" fill="url(#ck-${u})"/>
+        ${eyes}${mouth}
       </g>
-      <rect class="arm l" x="42" y="96" width="15" height="28" rx="7.5" fill="${color}" stroke="rgba(0,0,0,.12)"/>
-      <rect class="arm r" x="103" y="96" width="15" height="28" rx="7.5" fill="${color}" stroke="rgba(0,0,0,.12)"/>
-      <rect class="desk" x="22" y="114" width="116" height="26" rx="10"/>
-      <rect class="lap" x="60" y="100" width="40" height="22" rx="4" fill="${color}"/>
-      <circle cx="80" cy="111" r="3" fill="#fff" opacity=".85"/>
+      <rect class="arm l" x="40" y="96" width="16" height="29" rx="8" fill="${body}" stroke="rgba(0,0,0,.14)"/>
+      <rect class="arm r" x="104" y="96" width="16" height="29" rx="8" fill="${body}" stroke="rgba(0,0,0,.14)"/>
+      <rect class="desk" x="20" y="114" width="120" height="27" rx="11"/>
+      <rect class="lap" x="59" y="99" width="42" height="23" rx="5" fill="${body}" stroke="rgba(0,0,0,.18)"/>
+      <circle cx="80" cy="110.5" r="3.2" fill="#fff" opacity=".9"/>
       ${fx}
     </svg>`;
   }
