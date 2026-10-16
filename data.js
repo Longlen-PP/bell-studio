@@ -5,6 +5,8 @@
 //   channels[].type  = "affiliate" | "series" | "mv" | "story" | "live"   (ตัดสินว่างานในช่องนั้นต้องกรอกอะไร)
 //   works[]          = งาน 1 ชิ้น: สินค้า (affiliate) · เรื่อง (series) · เพลง (mv) · เรื่องเล่า (story) · รอบไลฟ์ (live)
 //                      props = ฟิลด์เฉพาะประเภท · characters/locations = เฉพาะประเภทที่มี · rules = กฎความต่อเนื่อง (series)
+//   รหัส: แผนก.code - ช่อง.code - งาน.no (3 หลัก) - ตัวอักษรชนิด+ตอน.n (2 หลัก) เช่น SHP-AFF-001-C01 (C=Clip E=EP V=Video S=Session)
+//         ช่อง.seq = ตัวนับเลขงานของช่อง (เลขงานไม่ถูกใช้ซ้ำแม้ลบงานทิ้ง)
 //   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · stage = idea | script | producing | editing | published
 //   รูป/ลิงก์ (cover, image, link) = ลิงก์แชร์ Google Drive หรือ URL https — เว้นว่างได้
 // platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
@@ -34,6 +36,7 @@ window.STUDIO = {
   departments: [
     {
       id: "facebook",
+      code: "FBK",
       name: "Facebook",
       emoji: "📘",
       head: { name: "Luna", gender: "ญ", emoji: "🎭", persona: "นักเล่าเรื่องสายดราม่า อินกับตัวละคร เข้าใจคนดูเพจไทย" },
@@ -49,6 +52,7 @@ window.STUDIO = {
     },
     {
       id: "youtube",
+      code: "YTB",
       name: "YouTube",
       emoji: "▶️",
       head: { name: "Shadow", gender: "ช", emoji: "📚", persona: "นักเล่าเรื่องใจเย็น ละเอียด ชอบประวัติศาสตร์และงานเด็ก" },
@@ -64,6 +68,7 @@ window.STUDIO = {
     },
     {
       id: "tiktok",
+      code: "TTK",
       name: "TikTok",
       emoji: "🎵",
       head: { name: "Queen", gender: "ญ", emoji: "💃", persona: "สายแฟชั่น ไวกับเทรนด์ รู้ว่าคลิปไหนหยุดนิ้วคนดู" },
@@ -79,6 +84,7 @@ window.STUDIO = {
     },
     {
       id: "shopee",
+      code: "SHP",
       name: "Shopee",
       emoji: "🛒",
       head: { name: "Axe", gender: "ช", emoji: "📦", persona: "นักขายสายตัวเลข คัดสินค้าเก่ง ไม่เคลมเกินจริง" },
@@ -97,14 +103,14 @@ window.STUDIO = {
   // ---- ช่อง / งาน / ตอน ----
   channels: [
     {
-      id: "affiliate", dept: "shopee", name: "Affiliate", platform: "Shopee Video", type: "affiliate", status: "active",
+      id: "affiliate", code: "AFF", seq: 1, dept: "shopee", name: "Affiliate", platform: "Shopee Video", type: "affiliate", status: "active",
       concept: "ช่องขายของปักตะกร้า เริ่ม 2026-10-02", audience: "", schedule: "", url: ""
     }
   ],
 
   works: [
     {
-      id: "kasty-tofu-20l", channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
+      id: "kasty-tofu-20l", no: 1, channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
       summary: "", cover: "", props: { category: "ทรายแมว" }, characters: [], locations: [], rules: "", note: "", updated: "2026-10-15"
     }
   ],

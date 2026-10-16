@@ -71,7 +71,19 @@
     const c = channel(w.channel), d = c && dept(c.dept);
     return [d?.name, c?.name, w.title].filter(Boolean).join(" › ");
   };
-  const epName = (T, e) => `${L("ep_" + T.noun)} ${e.n}${e.title ? " · " + e.title : ""}`;
+  // codes: SHP-AFF-001-C01 = department - channel - work number - kind letter + episode number
+  const pad = (v, w) => String(v ?? 0).padStart(w, "0");
+  const KIND_LETTER = { clip: "C", ep: "E", video: "V", session: "S" };
+  const workCode = (w) => {
+    const c = channel(w.channel), d = c && dept(c.dept);
+    return [d?.code, c?.code, pad(w.no, 3)].filter(Boolean).join("-");
+  };
+  const epCode = (e, short = false) => {
+    const w = work(e.work);
+    const tail = (KIND_LETTER[typeOfWork(w).noun] || "E") + pad(e.n, 2);
+    return short ? tail : `${workCode(w)}-${tail}`;
+  };
+  const epName = (T, e, short = false) => `${epCode(e, short)}${e.title ? " · " + e.title : ""}`;
   const progress = (w) => {
     const eps = epsOf(w.id);
     const pub = eps.filter((e) => e.stage === "published").length;
@@ -261,7 +273,7 @@
       sub = esc(epName(T, e));
       tags = `<span class="row-tags">${pills}</span>`;
     } else {
-      main = esc(epName(T, e));
+      main = esc(epName(T, e, true));
       sub = esc(e.summary || "");
     }
     return `
@@ -463,7 +475,7 @@
     const w = work(id), c = channel(w.channel), d = dept(c.dept), T = typeOfWork(w);
     const { eps, pub, total } = progress(w);
     const sep = '<span class="sep">›</span>';
-    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a>${sep}<a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>`;
+    const context = `${deptIcon(d.id)}<a href="#/dept/${esc(d.id)}">${esc(d.name)}</a>${sep}<a href="#/channel/${esc(c.id)}">${esc(c.name)}</a>${sep}<span class="code">${esc(workCode(w))}</span>`;
     const src = imageSrc(w.cover);
     const stage = src
       ? `<div class="product-stage">${imgTag(src, w.title)}</div>`
@@ -616,6 +628,7 @@
       fieldWrap(L("f_page"), input("url", c.url || "", linkAttrs));
     const body =
       fieldWrap(L("f_name"), input("name", c.name, `required autocomplete="off" placeholder="${esc(L("f_channelPh"))}"`)) +
+      fieldWrap(L("f_code"), input("code", c.code || "", 'autocomplete="off" maxlength="5" placeholder="AFF" style="text-transform:uppercase"'), `<span>${esc(L("f_codeHint"))}</span>`) +
       fieldWrap(L("f_dept"), select("dept", S().departments.map((d) => ({ id: d.id, label: `${d.name} — ${d.head.name}` })), c.dept)) +
       fieldWrap(L("f_platform"), select("platform", platformList(c.dept, c.platform), c.platform || platformList(c.dept)[0]?.id)) +
       fieldWrap(L("f_type"), select("type", typeOptions, c.type), `<span id="type-hint">${esc(L("typeHint_" + c.type))}</span>`) +
@@ -626,8 +639,21 @@
     openInspector(L(isNew ? "newChannel" : "editChannel"), body, {
       onSave(form) {
         if (!required(form, "name", "errName")) return;
+        const deptPick = form.elements.dept.value;
+        const taken = S().channels.filter((x) => x.dept === deptPick && x.id !== id).map((x) => x.code);
+        let code = form.elements.code.value.trim().toUpperCase();
+        if (!code) code = store.autoCode(form.elements.name.value, taken);
+        const codeEl = form.elements.code;
+        codeEl.parentElement.querySelector(".error")?.remove();
+        if (!/^[A-Z0-9]{2,5}$/.test(code) || taken.includes(code)) {
+          codeEl.setAttribute("aria-invalid", "true");
+          codeEl.insertAdjacentHTML("afterend", `<span class="error">${t("errCode")}</span>`);
+          codeEl.focus();
+          return;
+        }
         const data = {
           id: isNew ? slug(form.elements.name.value) : id,
+          code,
           dept: form.elements.dept.value,
           name: form.elements.name.value.trim(),
           platform: form.elements.platform.value,
@@ -638,7 +664,7 @@
           schedule: form.elements.schedule.value.trim(),
           url: form.elements.url.value.trim()
         };
-        commit((s) => { if (isNew) s.channels.push(data); else Object.assign(s.channels.find((x) => x.id === id), data); }, isNew ? "toastChannelAdded" : "toastChannelSaved");
+        commit((s) => { if (isNew) s.channels.push({ ...data, seq: 0 }); else Object.assign(s.channels.find((x) => x.id === id), data); }, isNew ? "toastChannelAdded" : "toastChannelSaved");
         if (isNew) go(`#/channel/${data.id}`);
       },
       onDelete: isNew ? null : () => {
@@ -719,6 +745,14 @@
           updated: store.today()
         };
         commit((s) => {
+          // each work gets the next number of its channel and keeps it (a number is never reused)
+          if (isNew || w.channel !== chId) {
+            const ch = s.channels.find((x) => x.id === chId);
+            ch.seq = (ch.seq || 0) + 1;
+            data.no = ch.seq;
+          } else {
+            data.no = w.no;
+          }
           if (isNew) {
             s.works.push(data);
             // a product is always sold through at least one clip, so Affiliate works start with one
