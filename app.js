@@ -83,7 +83,15 @@
     const tail = (KIND_LETTER[typeOfWork(w).noun] || "E") + pad(e.n, 2);
     return short ? tail : `${workCode(w)}-${tail}`;
   };
-  const epName = (T, e, short = false) => `${epCode(e, short)}${e.title ? " · " + e.title : ""}`;
+  // the format (template) is the clip's name; the optional title adds detail after it
+  const epLabel = (e) => [e.format, e.title].filter(Boolean).join(" — ");
+  const epName = (T, e, short = false) => `${epCode(e, short)}${epLabel(e) ? " · " + epLabel(e) : ""}`;
+  // suggestions for the format field: the presets for this kind of channel plus anything already used there
+  const formatChoices = (workId) => {
+    const w = work(workId), type = channel(w?.channel)?.type;
+    const used = S().episodes.filter((x) => channel(work(x.work)?.channel)?.type === type).map((x) => x.format);
+    return [...new Set([...(S().formats?.[type] || []), ...used].filter(Boolean))];
+  };
   const progress = (w) => {
     const eps = epsOf(w.id);
     const pub = eps.filter((e) => e.stage === "published").length;
@@ -757,7 +765,7 @@
             s.works.push(data);
             // a product is always sold through at least one clip, so Affiliate works start with one
             if (channel(chId)?.type === "affiliate") {
-              s.episodes.push({ id: `e-${store.rid()}`, work: data.id, n: 1, title: L("firstClip"), summary: "", stage: "idea", date: "", link: "", note: "", updated: store.today() });
+              s.episodes.push({ id: `e-${store.rid()}`, work: data.id, n: 1, format: "", title: "", summary: "", stage: "idea", date: "", link: "", note: "", updated: store.today() });
             }
           } else {
             s.works[s.works.findIndex((x) => x.id === id)] = data;
@@ -794,7 +802,7 @@
     const isNew = id == null;
     const startWork = work(preset.work) || S().works[0];
     const e = isNew
-      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, title: "", summary: "", stage: "idea", date: "", link: "", note: "" }
+      ? { work: startWork?.id, n: epsOf(startWork.id).length + 1, format: "", title: "", summary: "", stage: "idea", date: "", link: "", note: "" }
       : episode(id);
     const workOptions = S().channels.map((c) => ({
       group: `${dept(c.dept)?.name ?? ""} · ${c.name}`,
@@ -805,6 +813,7 @@
     const body =
       fieldWrap(L("e_work"), select("work", workOptions, e.work)) +
       fieldWrap(L("e_number"), input("n", e.n, 'type="number" min="1" inputmode="numeric"')) +
+      fieldWrap(L("e_format"), input("format", e.format || "", 'autocomplete="off" list="fmt-list"') + `<datalist id="fmt-list">${formatChoices(e.work).map((x) => `<option value="${esc(x)}">`).join("")}</datalist>`, esc(L("e_formatHint"))) +
       fieldWrap(L("e_title"), input("title", e.title, 'autocomplete="off"')) +
       fieldWrap(L("e_summary"), textarea("summary", e.summary, 'style="min-height:72px"')) +
       `<div class="field"><span class="label">${L("e_status")}</span>${stageSeg}</div>` +
@@ -818,6 +827,7 @@
           id: isNew ? `e-${store.rid()}` : id,
           work: f.elements.work.value,
           n: Math.max(1, parseInt(f.elements.n.value, 10) || 1),
+          format: f.elements.format.value.trim(),
           title: f.elements.title.value.trim(),
           summary: f.elements.summary.value.trim(),
           stage: f.querySelector('input[name="stage"]:checked')?.value || "idea",
@@ -831,9 +841,12 @@
       onDelete: isNew ? null : () => commit((s) => { s.episodes = s.episodes.filter((x) => x.id !== id); }, "toastEpDeleted")
     });
     const form = $("insp-form");
+    form.elements.work.addEventListener("change", () => {
+      $("fmt-list").innerHTML = formatChoices(form.elements.work.value).map((x) => `<option value="${esc(x)}">`).join("");
+    });
     if (isNew) {
       form.elements.work.addEventListener("change", () => { form.elements.n.value = epsOf(form.elements.work.value).length + 1; });
-      form.elements.title.focus();
+      form.elements.format.focus();
     }
   }
 

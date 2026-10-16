@@ -70,6 +70,8 @@ window.BellStore = (function () {
       if (!d.platforms) d.platforms = fresh.departments.find((x) => x.id === d.id)?.platforms || [];
       if (!d.code) d.code = fresh.departments.find((x) => x.id === d.id)?.code || String(d.id).slice(0, 3).toUpperCase();
     });
+    if (!s.formats) s.formats = clone(fresh.formats || {});
+    s.episodes.forEach((e) => { if (e.format == null) e.format = ""; });
     s.channels.forEach((c) => {
       if (!c.code) c.code = autoCode(c.name, s.channels.filter((x) => x.dept === c.dept && x !== c).map((x) => x.code).filter(Boolean));
     });

@@ -72,7 +72,7 @@ window.BELL_I18N = {
     fld_style: "Visual style", fld_engine: "Engine / tool", fld_lyrics: "Lyrics link", fld_narrator: "Narrator / voice",
     fld_script: "Script link", fld_when: "Date and time", fld_duration: "Duration", fld_products: "Products to feature", fld_runsheet: "Run-sheet link",
 
-    e_work: "Work", e_number: "Number", e_title: "Title", e_summary: "Summary", e_status: "Stage",
+    e_work: "Work", e_number: "Number", e_format: "Format", e_formatHint: "Pick one or type your own. It becomes the name of this clip in every list.", e_title: "Extra name (optional)", e_summary: "Summary", e_status: "Stage",
     e_date: "Publish date", e_link: "Post link", e_linkHint: "Public post link only. Never a personal affiliate link.",
     firstClip: "First clip",
     f_code: "Code", f_codeHint: "2-5 letters or digits, used in every code under this channel. Changing it renames them all.", errCode: "Use 2-5 letters or digits that no other channel in this department uses.",
@@ -171,7 +171,7 @@ window.BELL_I18N = {
     fld_style: "สไตล์ภาพ", fld_engine: "เครื่องมือที่ใช้", fld_lyrics: "ลิงก์เนื้อเพลง", fld_narrator: "ผู้บรรยาย / เสียงพากย์",
     fld_script: "ลิงก์สคริปต์", fld_when: "วันและเวลา", fld_duration: "ความยาว", fld_products: "สินค้าที่จะขาย", fld_runsheet: "ลิงก์แผนการไลฟ์",
 
-    e_work: "งาน", e_number: "ลำดับที่", e_title: "ชื่อตอน", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
+    e_work: "งาน", e_number: "ลำดับที่", e_format: "รูปแบบ", e_formatHint: "เลือกหรือพิมพ์เองได้ ใช้เป็นชื่อของตอนนี้ในทุกรายการ", e_title: "ชื่อเรียกเพิ่ม (ไม่บังคับ)", e_summary: "สรุปสั้นๆ", e_status: "ขั้นตอน",
     e_date: "วันที่ลง", e_link: "ลิงก์โพสต์", e_linkHint: "ใส่เฉพาะลิงก์โพสต์สาธารณะ ห้ามใส่ลิงก์ affiliate ส่วนตัว",
     firstClip: "คลิปแรก",
     f_code: "รหัสช่อง", f_codeHint: "ตัวอักษรหรือตัวเลข 2-5 ตัว ใช้เป็นส่วนหนึ่งของรหัสทุกอันในช่องนี้ ถ้าแก้ รหัสทั้งหมดจะเปลี่ยนตาม", errCode: "ใช้ตัวอักษรหรือตัวเลข 2-5 ตัว และต้องไม่ซ้ำกับช่องอื่นในแผนกเดียวกัน",

@@ -7,7 +7,8 @@
 //                      props = ฟิลด์เฉพาะประเภท · characters/locations = เฉพาะประเภทที่มี · rules = กฎความต่อเนื่อง (series)
 //   รหัส: แผนก.code - ช่อง.code - งาน.no (3 หลัก) - ตัวอักษรชนิด+ตอน.n (2 หลัก) เช่น SHP-AFF-001-C01 (C=Clip E=EP V=Video S=Session)
 //         ช่อง.seq = ตัวนับเลขงานของช่อง (เลขงานไม่ถูกใช้ซ้ำแม้ลบงานทิ้ง)
-//   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · stage = idea | script | producing | editing | published
+//   formats          = ตัวอย่างรูปแบบคลิป (template กลุ่ม) ต่อประเภทช่อง ขึ้นเป็นตัวเลือกในช่อง "รูปแบบ" ของตอน พิมพ์เองได้ และที่เคยใช้แล้วจะขึ้นให้เลือกซ้ำ
+//   episodes[]       = ตอน/คลิป/รอบ ของงาน: n = ลำดับ · format = รูปแบบ/template ที่ใช้เป็นชื่อของตอน · title = ชื่อเรียกเพิ่ม (ไม่บังคับ) · stage = idea | script | producing | editing | published
 //   รูป/ลิงก์ (cover, image, link) = ลิงก์แชร์ Google Drive หรือ URL https — เว้นว่างได้
 // platforms ของแผนก = ตัวเลือกใน dropdown ตอนสร้างช่อง (แก้ได้ในหน้าแก้ไขแผนก)
 // status ของช่อง: "active" = ใช้งานอยู่ (ค่าตั้งต้น) · "paused" = พัก
@@ -108,6 +109,14 @@ window.STUDIO = {
     }
   ],
 
+  formats: {
+    affiliate: ["คลิปรีวิวเห็นเฉพาะสินค้า", "คลิปรีวิวมีคนใช้สินค้า", "คลิปสาธิตการใช้งาน", "คลิปเปิดกล่อง", "คลิปเปรียบเทียบ"],
+    series: ["ตอนปกติ", "ตอนพิเศษ", "ตัวอย่าง (Trailer)"],
+    mv: ["เวอร์ชันเต็ม", "เวอร์ชันสั้น"],
+    story: ["ตอนเต็ม", "คลิปสั้น"],
+    live: ["ไลฟ์ขายของ", "ไลฟ์พิเศษ"]
+  },
+
   works: [
     {
       id: "kasty-tofu-20l", no: 1, channel: "affiliate", title: "Kasty Tofu Cat Litter 20L Original",
@@ -117,7 +126,7 @@ window.STUDIO = {
 
   episodes: [
     {
-      id: "kasty-tofu-20l-1", work: "kasty-tofu-20l", n: 1, title: "คลิปขาย 30 วิ", summary: "", stage: "published",
+      id: "kasty-tofu-20l-1", work: "kasty-tofu-20l", n: 1, format: "คลิปรีวิวเห็นเฉพาะสินค้า", title: "", summary: "", stage: "published",
       date: "", link: "", note: "Hand Talent + Gemini Omni Flash ลง Shopee Video", updated: "2026-10-15"
     }
   ]
