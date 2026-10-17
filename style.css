@@ -430,6 +430,8 @@ html[lang="th"] .sec-head h2 { letter-spacing: -0.005em; line-height: 1.3; }
 .tile-new .icon { width: 22px; height: 22px; }
 
 .product-stage { margin: 56px auto 0; max-width: 980px; aspect-ratio: 16 / 10; border-radius: 32px; background: var(--stage); display: grid; place-items: center; overflow: hidden; }
+/* percentage-height images need a definite grid track, else a tall picture overflows and gets cut at the bottom */
+.product-stage, .stage, .thumb, .lib-thumb { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .product-stage img { width: 100%; height: 100%; object-fit: contain; padding: 48px; }
 button.product-stage { border: 0; width: 100%; cursor: pointer; }
 button.product-stage:hover { background: color-mix(in srgb, var(--stage) 94%, var(--accent)); }
